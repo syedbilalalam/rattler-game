@@ -2,7 +2,8 @@
 import type { Dispatch, JSX, SetStateAction } from "react";
 import { useState, useEffect } from 'react';
 import '../../../assets/style.css';
-import { FIRST_LAYER_MAP_SIZE, TREES_MAP_2D, HUTS_MAP_2D } from '@/maps/first_layer';
+import { F_L_OBJECT, FIRST_LAYER_MAP_SIZE, MAP_2D } from '@/maps/first_layer';
+import swal from 'sweetalert2';
 
 
 type UseState<T> = [T, Dispatch<SetStateAction<T>>];
@@ -256,9 +257,18 @@ interface GameTextures {
     SNAKE_HEAD: HTMLImageElement;
     FIRED_HUT_ANGLES: HTMLImageElement[];
 }
-type FiredHutObjectY = Map<number, FiredHut>;
-type FiredHutObjectMap = Map<number, FiredHutObjectY>;
+type FirstLayerObjectMapYComponent = Map<number, FiredHut | TreeObject>;
+type FirstLayerObjectMap = Map<number, FirstLayerObjectMapYComponent>;
 
+
+type Position = {
+    x: number;
+    y: number;
+}
+type Size = {
+    width: number;
+    height: number;
+}
 
 class FiredHut {
 
@@ -267,14 +277,8 @@ class FiredHut {
     private firedHutCurrentAngleIndex: number;
     private ANIMATE_COOL_DOWN_TIME = 150 // In ms
     private lastAnimationState = 0; // In ms
-    private position: {
-        dx: number;
-        dy: number;
-    }
-    private size: {
-        width: number;
-        height: number;
-    }
+    private position: Position;
+    private size: Size;
 
     constructor(
         ctx: CanvasRenderingContext2D,
@@ -288,7 +292,7 @@ class FiredHut {
         crypto.getRandomValues(randomBytes);
         const firedHutInitialAngleIndex = randomBytes[0] % firedHutAngles.length;
         this.firedHutCurrentAngleIndex = firedHutInitialAngleIndex;
-        this.position = { dx, dy };
+        this.position = { x: dx, y: dy };
         this.size = { width, height };
 
         // Setting a random starting time
@@ -302,8 +306,8 @@ class FiredHut {
 
         this.ctx.drawImage(
             this.firedHutAngles[this.firedHutCurrentAngleIndex],
-            this.position.dx,
-            this.position.dy,
+            this.position.x,
+            this.position.y,
             this.size.width,
             this.size.height
         );
@@ -318,6 +322,39 @@ class FiredHut {
         this.firedHutCurrentAngleIndex++;
         if (this.firedHutCurrentAngleIndex >= this.firedHutAngles.length)
             this.firedHutCurrentAngleIndex = 0;
+    }
+}
+
+class TreeObject {
+    private position: Position;
+    private size: Size;
+
+    constructor(
+        private ctx: CanvasRenderingContext2D,
+        private treeTexture: HTMLImageElement,
+        dx: number,
+        dy: number,
+        width: number,
+        height: number
+    ) {
+        this.position = {
+            x: dx,
+            y: dy
+        }
+        this.size = {
+            width,
+            height
+        }
+    }
+
+    public draw() {
+        this.ctx.drawImage(
+            this.treeTexture,
+            this.position.x,
+            this.position.y,
+            this.size.width,
+            this.size.height
+        )
     }
 }
 
@@ -396,55 +433,70 @@ async function loadTextures(): Promise<GameTextures> {
 
     return TEXTURES;
 }
-function loadFiredHuts(
+function loadFirstLayerObjects(
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
-    firedHutAngles: HTMLImageElement[]
+    firedHutAngles: HTMLImageElement[],
+    treeTexture: HTMLImageElement
 ) {
-    const objectMap: FiredHutObjectMap = new Map();
+    const objectMap: FirstLayerObjectMap = new Map();
 
-    const hutWidth = canvas.width / FIRST_LAYER_MAP_SIZE.X;
-    const hutHeight = canvas.height / FIRST_LAYER_MAP_SIZE.Y;
+    const objectWidth = canvas.width / FIRST_LAYER_MAP_SIZE.X;
+    const objectHeight = canvas.height / FIRST_LAYER_MAP_SIZE.Y;
 
     for (let y = 0; y < FIRST_LAYER_MAP_SIZE.Y; y++) {
         for (let x = 0; x < FIRST_LAYER_MAP_SIZE.X; x++) {
 
-            if (!HUTS_MAP_2D[y][x]) continue;
+            if (MAP_2D[y][x] === null) continue;
 
-            let yAxisMap: FiredHutObjectY = new Map();
+            let yAxisMap: FirstLayerObjectMapYComponent = new Map();
             // Checking if there is already a map or not
             const firedHutObject = objectMap.get(x);
             if (firedHutObject) yAxisMap = firedHutObject;
 
-            objectMap.set(
-                x,
+            const objectPositionX = objectWidth * x;
+            const objectPositionY = objectHeight * y;
+
+            if (MAP_2D[y][x] === F_L_OBJECT.TREE) {
+                yAxisMap.set(
+                    y,
+                    new TreeObject(
+                        ctx,
+                        treeTexture,
+                        objectPositionX,
+                        objectPositionY,
+                        objectWidth,
+                        objectHeight
+                    )
+                );
+            }
+            else if (MAP_2D[y][x] === F_L_OBJECT.FIRED_HUT) {
                 yAxisMap.set(
                     y,
                     new FiredHut(
                         ctx,
-                        hutWidth * x,
-                        hutHeight * y,
-                        hutWidth,
-                        hutHeight,
+                        objectPositionX,
+                        objectPositionY,
+                        objectWidth,
+                        objectHeight,
                         firedHutAngles
                     )
-                )
-            )
+                );
+            }
+            objectMap.set(x, yAxisMap);
         }
     }
     return objectMap;
 }
 
-const GAME_WINDOW_PADDING = 3;
-async function renderFirstLayer(
+type ObstructionsArray = { x: number; y: number; width: number; height: number; }[];
+function renderFirstLayer(
 
-    canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
     backgroundTexture: HTMLImageElement,
-    treeTexture: HTMLImageElement,
-    firedHutObjects: FiredHutObjectMap
+    firstLayerObjectMap: FirstLayerObjectMap
 
-): Promise<void> {
+): void {
 
     // Rendering background texture
     for (let row = 0; row < 9; row++)
@@ -452,42 +504,125 @@ async function renderFirstLayer(
             ctx.drawImage(backgroundTexture, (column * 100), (row * 82), 100, 82);
 
     // Rendering Trees textures
-    const treeWidth = canvas.width / FIRST_LAYER_MAP_SIZE.X;
-    const treeHeight = canvas.height / FIRST_LAYER_MAP_SIZE.Y;
-    for (let y = 0; y < FIRST_LAYER_MAP_SIZE.Y; y++)
+    for (let y = 0; y < FIRST_LAYER_MAP_SIZE.Y; y++) {
         for (let x = 0; x < FIRST_LAYER_MAP_SIZE.X; x++) {
-            if (TREES_MAP_2D[y][x]) {
-                ctx.drawImage(
-                    treeTexture,
-                    treeWidth * x,
-                    treeHeight * y,
-                    treeWidth,
-                    treeHeight
-                );
-            }
-            else if (HUTS_MAP_2D[y][x]) {
-                const firedHut = firedHutObjects.get(x)?.get(y);
-                if (!firedHut) throw new Error(
-                    'Fired hut object was not loaded'
-                );
+            if (MAP_2D[y][x] === null) continue;
+            const firstLayerObject = firstLayerObjectMap.get(x)?.get(y);
+            if (!firstLayerObject) throw new Error(
+                'Fired hut object was not loaded'
+            );
 
-                firedHut.animate();
+            if (firstLayerObject instanceof TreeObject) {
+
+                firstLayerObject.draw();
+            }
+            else if (firstLayerObject instanceof FiredHut) {
+
+                firstLayerObject.animate();
             }
         }
+    }
 }
+
+function isPointObstructed(obstructionsArray: ObstructionsArray, point: Point): boolean {
+
+    for (const obstruction of obstructionsArray) {
+        if (
+            point.x >= obstruction.x && point.x <= (obstruction.x + obstruction.width)
+            &&
+            point.y >= obstruction.y && point.y <= (obstruction.y + obstruction.height)
+
+        ) return true;
+    }
+
+    return false;
+}
+
 type HeadPosition = 'UP' | 'DOWN' | 'RIGHT' | 'LEFT';
 class SnakeHead {
     private headPosition: HeadPosition = 'UP';
+    private position: Position = {
+        x: 150,
+        y: 150
+    };
+    private size: Size = {
+        width: 50,
+        height: 100
+    };
+    private halfSnakeWidth: number = this.size.width / 2;
+    private halfSnakeHeight = this.size.height / 2;
+    private readonly SNAKE_SPEED = 3;
+
     constructor(
         private ctx: CanvasRenderingContext2D,
+        private obstructionArray: ObstructionsArray,
         private snakeTexture: HTMLImageElement
     ) { }
 
+    public rotate(headPosition: HeadPosition) {
+        this.headPosition = headPosition;
+    }
+
+    private updatePosition(x: number, y: number): void {
+
+        const SnakeHeadPoints: Point[] = [];
+
+        SnakeHeadPoints.push({
+            x: x - this.halfSnakeWidth,
+            y: y + this.halfSnakeHeight
+        });
+        SnakeHeadPoints.push({
+            x: x + this.halfSnakeWidth,
+            y: y + this.halfSnakeHeight
+        });
+
+        SnakeHeadPoints.push({
+            x: x - this.halfSnakeWidth,
+            y: y - this.halfSnakeHeight
+        });
+
+        SnakeHeadPoints.push({
+            x: x + this.halfSnakeWidth,
+            y: y - this.halfSnakeHeight
+        });
+
+        let obstructed = false;
+        for (const { x, y } of SnakeHeadPoints) {
+            if (isPointObstructed(this.obstructionArray, { x, y })) {
+                obstructed = true;
+                break;
+            }
+        }
+
+        if (!obstructed) this.position = { x, y };
+
+    }
+
+    public moveForward(): void {
+        switch (this.headPosition) {
+
+            case 'UP':
+                this.updatePosition(this.position.x, this.position.y - this.SNAKE_SPEED);
+                break;
+
+            case 'DOWN':
+                this.updatePosition(this.position.x, this.position.y + this.SNAKE_SPEED);
+                break;
+
+            case 'RIGHT':
+                this.updatePosition(this.position.x + this.SNAKE_SPEED, this.position.y);
+                break;
+
+            case 'LEFT':
+                this.updatePosition(this.position.x - this.SNAKE_SPEED, this.position.y);
+                break;
+        }
+    }
+
     public update() {
-
-
+        this.moveForward();
         this.ctx.save(); // save current state
-        this.ctx.translate(300, 500); // move origin to (x, y)
+        this.ctx.translate(this.position.x, this.position.y); // move origin to (x, y)
         switch (this.headPosition) {
             case 'UP':
                 this.ctx.rotate(0);   // rotate canvas
@@ -502,21 +637,59 @@ class SnakeHead {
                 this.ctx.rotate(Math.PI / 2 + Math.PI);   // rotate canvas
                 break;
         }
-        this.ctx.drawImage(this.snakeTexture, -50 / 2, -100 / 2, 50, 100); // draw with center at origin
+        this.ctx.drawImage(
+
+            this.snakeTexture,
+            -this.halfSnakeWidth,
+            -this.halfSnakeHeight,
+            this.size.width,
+            this.size.height
+
+        ); // draw with center at origin
         this.ctx.restore(); // restore state (no rotation for next draw)
     }
-
-    public rotate(headPosition: HeadPosition) {
-        this.headPosition = headPosition;
-    }
 }
 
-async function renderSecondLayer(
+function renderSecondLayer(
     snakeTexture: SnakeHead,
+    firstLayerObstructions: ObstructionsArray
 
-): Promise<void> {
+): void {
     snakeTexture.update();
 }
+
+function detectFirstLayerObstructions(canvas: HTMLCanvasElement): ObstructionsArray {
+    const obstructionsArray: ObstructionsArray = [];
+
+    const objectWidth = canvas.width / FIRST_LAYER_MAP_SIZE.X;
+    const objectHeight = canvas.height / FIRST_LAYER_MAP_SIZE.Y;
+
+    // Analyzing first layer map
+    for (let y = 0; y < FIRST_LAYER_MAP_SIZE.Y; y++) {
+        for (let x = 0; x < FIRST_LAYER_MAP_SIZE.X; x++) {
+
+            if (MAP_2D[y][x] === null) continue;
+
+            const objectPositionX = objectWidth * x;
+            const objectPositionY = objectHeight * y;
+
+            obstructionsArray.push({
+                x: objectPositionX,
+                y: objectPositionY,
+                width: objectWidth,
+                height: objectHeight
+            });
+        }
+    }
+
+    return obstructionsArray;
+}
+
+type Point = {
+    x: number;
+    y: number;
+}
+
 
 function launchError(err: any) {
     throw err;
@@ -524,22 +697,43 @@ function launchError(err: any) {
 
 export default function Page(): JSX.Element {
 
-    const [gameWindowSize, setGameWindowSize] = useState({
-        height: 0,
-        width: 0
-    });
+    // const [gameWindowSize, setGameWindowSize] = useState({
+    //     height: 0,
+    //     width: 0
+    // });
 
     useEffect(() => {
-        const gameWindow = document.getElementById('gameWindow');
-        if (!gameWindow) throw new Error('Game window not found');
-        const gameWindowSizeUpdater = () => {
-            setGameWindowSize({
-                height: gameWindow.clientHeight,
-                width: gameWindow.clientWidth
-            });
+        // const gameWindow = document.getElementById('gameWindow');
+        // if (!gameWindow) throw new Error('Game window not found');
+        let popupOpened = false;
+        const gameWindowSizeUpdater = async () => {
+            // setGameWindowSize({
+            //     height: gameWindow.clientHeight,
+            //     width: gameWindow.clientWidth
+            // });
+            if (window.innerWidth - 300 <= window.innerHeight) {
+                // window.onresize = null;
+                if (popupOpened) return;
+                popupOpened = true;
+                await swal.fire({
+                    text: 'This game is not designed to run in Potrait mode'
+
+                });
+                popupOpened = false;
+                window.onresize = gameWindowSizeUpdater;
+                gameWindowSizeUpdater();
+
+            } else {
+                swal.close();
+                popupOpened = false;
+            }
         }
         window.onresize = gameWindowSizeUpdater;
         gameWindowSizeUpdater();
+
+        alert(
+            'This game is in its every early build, sanke body is current under development and testing for perfect physics and geometric calculations'
+        );
 
         const c = document.getElementById('gameWindow') as HTMLCanvasElement;
         if (!c) throw new Error('Incomple JSX, Required game window is not present');
@@ -549,28 +743,53 @@ export default function Page(): JSX.Element {
             throw new Error('Browser is too older for managing high graphic engine');
         }
 
+        swal.fire({
+            text: 'Start game ?'
+        }).then (()=>{
+
+            document.body.requestFullscreen();
+        });
+
 
         (async () => {
 
             try {
 
                 const TEXTURES = await loadTextures();
-                const firedHutObjects = loadFiredHuts(c, ctx, TEXTURES.FIRED_HUT_ANGLES);
-                const snakeHeadObject = new SnakeHead(ctx, TEXTURES.SNAKE_HEAD);
+                const firstLayerObjects = loadFirstLayerObjects(
+                    c,
+                    ctx,
+                    TEXTURES.FIRED_HUT_ANGLES,
+                    TEXTURES.TREE
+                );
+                const firstLayerObstructions = detectFirstLayerObstructions(c);
+                const snakeHeadObject = new SnakeHead(
+                    ctx,
+                    firstLayerObstructions,
+                    TEXTURES.SNAKE_HEAD
+                );
 
                 // Starting to listen keyboard events
                 window.onkeydown = (e) => {
-                    switch (e.key) {
-                        case 'ArrowUp':
+                    switch (e.key.toLowerCase()) {
+
+                        case 'w':
+                        case 'arrowup':
                             snakeHeadObject.rotate('UP');
                             break;
-                        case 'ArrowDown':
+
+                        case 's':
+                        case 'arrowdown':
                             snakeHeadObject.rotate('DOWN');
                             break;
-                        case 'ArrowRight':
+
+                        case 'd':
+                        case 'arrowright':
                             snakeHeadObject.rotate('RIGHT');
                             break;
-                        case 'ArrowLeft':
+
+                        case 'a':
+                        case 'arrowleft':
                             snakeHeadObject.rotate('LEFT');
                             break;
 
@@ -579,8 +798,8 @@ export default function Page(): JSX.Element {
 
                 const gameLoop = () => {
                     ctx.clearRect(0, 0, c.width, c.height);
-                    renderFirstLayer(c, ctx, TEXTURES.BACKGROUND, TEXTURES.TREE, firedHutObjects);
-                    renderSecondLayer(snakeHeadObject);
+                    renderFirstLayer(ctx, TEXTURES.BACKGROUND, firstLayerObjects);
+                    renderSecondLayer(snakeHeadObject, firstLayerObstructions);
                     window.requestAnimationFrame(gameLoop);
                 }
                 gameLoop();
@@ -593,7 +812,8 @@ export default function Page(): JSX.Element {
 
     return (
         <>
-            <canvas id={'gameWindow'} height={700} width={900} />
+            {/* <canvas id={'gameWindow'} /> */}
+            {<canvas id={'gameWindow'} height={700} width={900} />}
             {/* <RenderTrees gameWindowSize={gameWindowSize} /> */}
             {/* <img src={'/images/grass.png'} alt="" /> */}
             {/* {MyFirstEveryCanvas()} */}

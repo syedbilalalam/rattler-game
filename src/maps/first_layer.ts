@@ -14,30 +14,24 @@ export enum FIRST_LAYER_MAP_SIZE {
 //     TREES_MAP_2D[index] = new Array(FIRST_LAYER_MAP_SIZE.X).fill(true);
 // }
 
-const HUTS_MAP_2D: boolean[][] = [
-    [false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false],
-    [false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false],
-    [false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false],
-    [false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false],
-    [true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true],
-    [true,  true,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false],
-    [false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false],
-    [false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false],
-    [false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false]
-];
-const TREES_MAP_2D: boolean[][] = [
-    [true,  true,   true,   true,   true,   true,   true,   true,   true,   true,   true,   true,   true    ],
-    [true,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true    ],
-    [true,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true    ],
-    [true,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true    ],
-    [false, false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false   ],
-    [false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true    ],
-    [true,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true    ],
-    [true,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true    ],
-    [true,  true,   true,   true,   true,   true,   true,   true,   true,   true,   true,   true,   true    ]
+export const enum F_L_OBJECT {
+    TREE,
+    FIRED_HUT
+}
+
+
+const MAP_2D: (F_L_OBJECT | null)[][] = [
+    [F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE  ],
+    [F_L_OBJECT.TREE,       null,       null,      null,        null,     null,     null,        null,          null,       null,       null,      null,        F_L_OBJECT.TREE  ],
+    [F_L_OBJECT.TREE,       null,       null,      null,        null,     null,     null,        null,          null,       null,       null,      null,        F_L_OBJECT.TREE  ],
+    [F_L_OBJECT.TREE,       null,       null,      null,        null,     null,     null,        null,          null,       null,       null,      null,        F_L_OBJECT.TREE  ],
+    [F_L_OBJECT.FIRED_HUT,  null,       null,      null,        null,     null,     null,        null,          null,       null,       null,      null,        F_L_OBJECT.FIRED_HUT  ],
+    [F_L_OBJECT.TREE,       null,       null,      null,        null,     null,     null,        null,          null,       null,       null,      null,        F_L_OBJECT.TREE  ],
+    [F_L_OBJECT.TREE,       null,       null,      null,        null,     null,     null,        null,          null,       null,       null,      null,        F_L_OBJECT.TREE  ],
+    [F_L_OBJECT.TREE,       null,       null,      null,        null,     null,     null,        null,          null,       null,       null,      null,        F_L_OBJECT.TREE  ],
+    [F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE,       F_L_OBJECT.TREE,        F_L_OBJECT.TREE  ]
 ];
 
 export {
-    TREES_MAP_2D,
-    HUTS_MAP_2D
+    MAP_2D
 };
