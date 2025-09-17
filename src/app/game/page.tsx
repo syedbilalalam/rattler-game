@@ -728,12 +728,6 @@ export default function Page(): JSX.Element {
                 popupOpened = false;
             }
         }
-        window.onresize = gameWindowSizeUpdater;
-        gameWindowSizeUpdater();
-
-        alert(
-            'This game is in its every early build, sanke body is current under development and testing for perfect physics and geometric calculations'
-        );
 
         const c = document.getElementById('gameWindow') as HTMLCanvasElement;
         if (!c) throw new Error('Incomple JSX, Required game window is not present');
@@ -743,12 +737,22 @@ export default function Page(): JSX.Element {
             throw new Error('Browser is too older for managing high graphic engine');
         }
 
-        swal.fire({
-            text: 'Start game ?'
-        }).then (()=>{
+        const isDevHere = (new URLSearchParams(window.location.search)).get('dev');
+        if (!isDevHere) {
+            window.onresize = gameWindowSizeUpdater;
+            gameWindowSizeUpdater();
 
-            document.body.requestFullscreen();
-        });
+            alert(
+                'This game is in its every early build, snake body is currently under development and testing for perfect physics and geometric calculations'
+            );
+
+            swal.fire({
+                text: 'Start game ?'
+            }).then(() => {
+
+                document.body.requestFullscreen();
+            });
+        }
 
 
         (async () => {
