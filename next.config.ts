@@ -5,5 +5,8 @@ const nextConfig: NextConfig = {
 };
 module.exports = {
     output: 'export', // for Next.js 13+ App Router
+    images: {
+        unoptimized: true
+    }
 }
 export default nextConfig;

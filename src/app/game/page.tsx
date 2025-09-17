@@ -807,6 +807,7 @@ export default function Page(): JSX.Element {
 
     return (
         <>
+            <img id={'backgroundImage'} src={'/images/game_background.png'} alt={'Failed to load game background image'} />
             {/* <canvas id={'gameWindow'} /> */}
             {<canvas id={'gameWindow'} height={700} width={900} />}
             {/* <RenderTrees gameWindowSize={gameWindowSize} /> */}
