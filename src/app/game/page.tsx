@@ -691,7 +691,7 @@ type Point = {
 }
 
 
-function launchError(err: any) {
+function launchError(err: unknown) {
     throw err;
 }
 
