@@ -698,7 +698,8 @@ export default function Page(): JSX.Element {
 
         const startGame = () => {
             swal.fire({
-                text: 'Start game ?'
+                text: 'Start game ?',
+                allowOutsideClick: false
             }).then((e) => {
                 if (e.isConfirmed)
                     document.body.requestFullscreen();
@@ -712,7 +713,6 @@ export default function Page(): JSX.Element {
                 popupOpened = true;
                 await swal.fire({
                     text: 'This game is not designed to run in Potrait mode'
-
                 });
                 popupOpened = false;
                 window.onresize = gameWindowSizeUpdater;
