@@ -302,8 +302,6 @@ class FiredHut {
 
     public animate(): void {
 
-        // console.log(this.lastAnimationState);
-
         this.ctx.drawImage(
             this.firedHutAngles[this.firedHutCurrentAngleIndex],
             this.position.x,
@@ -313,7 +311,6 @@ class FiredHut {
         );
 
         const currentState = performance.now();
-        // console.log(currentState);
         const currentAnimationDelay = currentState - this.lastAnimationState;
 
         if (currentAnimationDelay < this.ANIMATE_COOL_DOWN_TIME) return;
@@ -697,20 +694,18 @@ function launchError(err: unknown) {
 
 export default function Page(): JSX.Element {
 
-    // const [gameWindowSize, setGameWindowSize] = useState({
-    //     height: 0,
-    //     width: 0
-    // });
-
     useEffect(() => {
-        // const gameWindow = document.getElementById('gameWindow');
-        // if (!gameWindow) throw new Error('Game window not found');
+
+        const startGame = () => {
+            swal.fire({
+                text: 'Start game ?'
+            }).then((e) => {
+                if (e.isConfirmed)
+                    document.body.requestFullscreen();
+            });
+        }
         let popupOpened = false;
         const gameWindowSizeUpdater = async () => {
-            // setGameWindowSize({
-            //     height: gameWindow.clientHeight,
-            //     width: gameWindow.clientWidth
-            // });
             if (window.innerWidth - 300 <= window.innerHeight) {
                 // window.onresize = null;
                 if (popupOpened) return;
@@ -724,7 +719,8 @@ export default function Page(): JSX.Element {
                 gameWindowSizeUpdater();
 
             } else {
-                swal.close();
+                // swal.close();
+                if (popupOpened) startGame();
                 popupOpened = false;
             }
         }
@@ -746,12 +742,7 @@ export default function Page(): JSX.Element {
                 'This game is in its every early build, snake body is currently under development and testing for perfect physics and geometric calculations'
             );
 
-            swal.fire({
-                text: 'Start game ?'
-            }).then(() => {
-
-                document.body.requestFullscreen();
-            });
+            startGame();
         }
 
 
