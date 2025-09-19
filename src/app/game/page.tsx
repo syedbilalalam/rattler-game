@@ -572,7 +572,7 @@ class SnakeHead {
     private halfSnakeWidth: number = this.size.width / 2;
     private halfSnakeHeight = this.size.height / 2;
     private rotateRequested = false;
-    protected readonly SNAKE_SPEED = 4;
+    protected readonly SNAKE_SPEED = 20;
 
     constructor(
         protected ctx: CanvasRenderingContext2D,
@@ -601,6 +601,7 @@ class SnakeHead {
                 this.state.tailPosition = TAIL_POSITION.RIGHT
                 break;
         }
+
     }
 
     private updatePosition(x: number, y: number): boolean {
@@ -765,50 +766,77 @@ class SnakeTummy {
         this.position.y = y;
     }
 
-    public updateState(state: BodyPartState): void {
+    public updateState(newState: BodyPartState): void {
+
         this.tailPart?.updateState({ ...this.state });
 
-        let newPosition: Position = {x: 0, y: 0};
-        
-        switch (state.tailPosition) {
+        // let newPosition: Position = { x: newState.x, y: newState.y };
 
-            case TAIL_POSITION.UP:
-                newPosition = {
-                    x: state.x,
-                    y: state.y - this.size.height
-                };
-                break;
+        // switch (newState.tailPosition) {
 
-            case TAIL_POSITION.DOWN:
-                newPosition = {
-                    x: state.x,
-                    y: state.y + this.size.height
-                };
-                break;
+        //     case TAIL_POSITION.UP:
+        //         newPosition = {
+        //             x: newState.x,
+        //             y: newState.y - this.size.height
+        //         };
+        //         break;
 
-            case TAIL_POSITION.RIGHT:
-                newPosition = {
-                    x: state.x + this.size.width,
-                    y: state.y
-                };
-                break;
+        //     case TAIL_POSITION.DOWN:
+        //         newPosition = {
+        //             x: newState.x,
+        //             y: newState.y + this.size.height
+        //         };
+        //         break;
 
-            case TAIL_POSITION.LEFT:
-                newPosition = {
-                    x: state.x - this.size.width,
-                    y: state.y
-                };
-                break;
+        //     case TAIL_POSITION.RIGHT:
+        //         newPosition = {
+        //             x: newState.x + this.size.width,
+        //             y: newState.y
+        //         };
+        //         break;
 
-        }
+        //     case TAIL_POSITION.LEFT:
+        //         newPosition = {
+        //             x: newState.x - this.size.width,
+        //             y: newState.y
+        //         };
+        //         break;
 
-        this.state = {
-            x: newPosition.x,
-            y: newPosition.y,
-            headPosition: state.headPosition,
-            tailPosition: state.tailPosition
-        }
-        
+        // }
+
+        // if (
+        //     newState.headPosition !== this.state.headPosition &&
+        //     newState.tailPosition !== this.state.tailPosition
+        // ) {
+
+        //     this.state = {
+        //         x: newState.x,
+        //         y: newState.y,
+        //         headPosition: newState.headPosition,
+        //         tailPosition: this.state.tailPosition
+        //     }
+        // }
+        // else if (
+        //     newState.headPosition === this.state.headPosition &&
+        //     newState.tailPosition !== this.state.tailPosition
+        // ) {
+
+        //     this.state = {
+        //         x: newState.x,
+        //         y: newState.y,
+        //         headPosition: newState.headPosition,
+        //         tailPosition: newState.tailPosition
+        //     }
+        // }
+        // else {
+        //     this.state = {
+        //         x: newState.x,
+        //         y: newState.y,
+        //         headPosition: this.state.headPosition,
+        //         tailPosition: this.state.tailPosition
+        //     }
+        // }
+        this.state = { ...newState };
         this.updatePosition(
             this.state.x,
             this.state.y
@@ -1121,12 +1149,38 @@ class RattlerSnake extends SnakeHead {
 
         // ) {
         // }
-        this.snakeFirstTummy.updateState({ ...this.headState });
+        if (
+            this.snakeFirstTummy.getState.x !== this.headState.x ||
+            this.snakeFirstTummy.getState.y !== this.headState.y
+        ) {
+
+            this.snakeFirstTummy.updateState({ ...this.headState });
+        }
+
         this.updateSnakeHead();
         this.snakeFirstTummy.update();
     }
 
     public rotate(headPosition: HEAD_POSITION): void {
+
+        switch (headPosition) {
+            case HEAD_POSITION.UP:
+                if (this.headState.headPosition === HEAD_POSITION.DOWN) return;
+                break;
+
+            case HEAD_POSITION.DOWN:
+                if (this.headState.headPosition === HEAD_POSITION.UP) return;
+                break;
+
+            case HEAD_POSITION.RIGHT:
+                if (this.headState.headPosition === HEAD_POSITION.LEFT) return;
+                break;
+
+            case HEAD_POSITION.LEFT:
+                if (this.headState.headPosition === HEAD_POSITION.RIGHT) return;
+                break;
+
+        }
 
         this.snakeFirstTummy.setHead(headPosition);
         this.rotateSnakeHead(headPosition);
@@ -1139,7 +1193,7 @@ class RattlerSnake extends SnakeHead {
             this.snakeLastTummy.getState.tailPosition,
             {
                 x: this.snakeLastTummy.position.x,
-                y: this.snakeLastTummy.position.y + 22
+                y: this.snakeLastTummy.position.y
             },
             this.TUMMY_SIZE
         );
@@ -1312,7 +1366,10 @@ export default function Page(): JSX.Element {
                     // ctx.strokeStyle = "blue";
                     // ctx.lineWidth = 2;
                     // ctx.stroke();
+                    // setTimeout(() => {
+
                     window.requestAnimationFrame(gameLoop);
+                    // }, 500);
                 }
                 gameLoop();
             }
