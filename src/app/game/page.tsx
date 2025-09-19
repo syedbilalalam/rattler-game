@@ -541,11 +541,29 @@ enum HEAD_POSITION {
     RIGHT,
     LEFT
 }
+enum TAIL_POSITION {
+    UP,
+    DOWN,
+    RIGHT,
+    LEFT,
+    END
+}
+
+interface BodyPartState extends Position {
+    headPosition: HEAD_POSITION
+    tailPosition: TAIL_POSITION
+}
+
 class SnakeHead {
-    protected headPosition: HEAD_POSITION = HEAD_POSITION.UP;
     protected position: Position = {
         x: 150,
         y: 150
+    };
+    private state: BodyPartState = {
+        x: this.position.x,
+        y: this.position.y,
+        headPosition: HEAD_POSITION.UP,
+        tailPosition: TAIL_POSITION.DOWN
     };
     protected size: Size = {
         width: 40,
@@ -553,16 +571,36 @@ class SnakeHead {
     };
     private halfSnakeWidth: number = this.size.width / 2;
     private halfSnakeHeight = this.size.height / 2;
+    private rotateRequested = false;
     protected readonly SNAKE_SPEED = 4;
 
     constructor(
-        private ctx: CanvasRenderingContext2D,
+        protected ctx: CanvasRenderingContext2D,
         private obstructionArray: ObstructionsArray,
         private snakeTexture: HTMLImageElement
     ) { }
 
     protected rotateSnakeHead(headPosition: HEAD_POSITION) {
-        this.headPosition = headPosition;
+        this.state.headPosition = headPosition;
+
+        switch (this.state.headPosition) {
+
+            case HEAD_POSITION.UP:
+                this.state.tailPosition = TAIL_POSITION.DOWN
+                break;
+
+            case HEAD_POSITION.DOWN:
+                this.state.tailPosition = TAIL_POSITION.UP
+                break;
+
+            case HEAD_POSITION.RIGHT:
+                this.state.tailPosition = TAIL_POSITION.LEFT
+                break;
+
+            case HEAD_POSITION.LEFT:
+                this.state.tailPosition = TAIL_POSITION.RIGHT
+                break;
+        }
     }
 
     private updatePosition(x: number, y: number): boolean {
@@ -596,16 +634,26 @@ class SnakeHead {
             }
         }
 
-        if (!obstructed) {
-            this.position = { x, y }
+        if (obstructed) {
+            // Updating state
+            this.state.x = 0;
+            this.state.y = 0;
+
+            return false;
+        }
+        else {
+            // Updating state
+            this.state.x = x - this.position.x;
+            this.state.y = y - this.position.y;
+
+            this.position = { x, y };
             return true;
         }
-        else return false;
 
     }
 
     public moveForward(): boolean {
-        switch (this.headPosition) {
+        switch (this.state.headPosition) {
 
             case HEAD_POSITION.UP:
                 return this.updatePosition(this.position.x, this.position.y - this.SNAKE_SPEED);
@@ -621,11 +669,21 @@ class SnakeHead {
         }
     }
 
-    protected updateSnakeHead(): boolean {
-        let movement = this.moveForward();
+    protected get headState(): BodyPartState {
+        return {
+            x: this.position.x,
+            y: this.position.y,
+            headPosition: this.state.headPosition,
+            tailPosition: this.state.tailPosition
+        }
+    }
+
+    protected updateSnakeHead(): void {
+
+        this.moveForward();
         this.ctx.save(); // save current state
         this.ctx.translate(this.position.x, this.position.y); // move origin to (x, y)
-        switch (this.headPosition) {
+        switch (this.state.headPosition) {
 
             case HEAD_POSITION.UP:
                 this.ctx.rotate(0);   // rotate canvas
@@ -653,24 +711,14 @@ class SnakeHead {
 
         ); // draw with center at origin
         this.ctx.restore(); // restore state (no rotation for next draw)
-
-        return movement;
     }
 }
 
-enum TAIL_POSITION {
-    UP,
-    DOWN,
-    RIGHT,
-    LEFT,
-    END
-}
-
 class SnakeTummy {
-    private readonly SNAKE_TUMMY_STROKE = 2;
+    private readonly SNAKE_TUMMY_STROKE = 1;
     private size: Size;
-    private tailPart: SnakeTummy | null = null;
-
+    public tailPart: SnakeTummy | null = null;
+    private state: BodyPartState;
     private halfTummySize;
 
     // private halfTummyWidthWithStroke = (this.SNAKE_TUMMY_STROKE * 2) + this.halfTummyWidth;
@@ -681,20 +729,21 @@ class SnakeTummy {
     };
     constructor(
         private ctx: CanvasRenderingContext2D,
-        private headPosition: HEAD_POSITION,
-        private tailPosition: TAIL_POSITION,
-        private position: Position,
-        private speed: number,
+        headPosition: HEAD_POSITION,
+        tailPosition: TAIL_POSITION,
+        public position: Position,
         tummySize: number
     ) {
-        if (
-            (headPosition === HEAD_POSITION.UP && tailPosition === TAIL_POSITION.UP) ||
-            (headPosition === HEAD_POSITION.DOWN && tailPosition === TAIL_POSITION.DOWN) ||
-            (headPosition === HEAD_POSITION.RIGHT && tailPosition === TAIL_POSITION.RIGHT) ||
-            (headPosition === HEAD_POSITION.LEFT && tailPosition === TAIL_POSITION.LEFT)
-        ) throw new Error(
+        if (HEAD_POSITION[headPosition] === TAIL_POSITION[tailPosition]) throw new Error(
             "Logic error snake's tummay can't have same head and tail values"
         );
+
+        this.state = {
+            x: 0,
+            y: 0,
+            headPosition,
+            tailPosition
+        }
 
         this.size = {
             width: tummySize,
@@ -711,9 +760,70 @@ class SnakeTummy {
 
     }
 
+    private updatePosition(x: number, y: number): void {
+        this.position.x = x;
+        this.position.y = y;
+    }
+
+    public updateState(state: BodyPartState): void {
+        this.tailPart?.updateState({ ...this.state });
+
+        let newPosition: Position = {x: 0, y: 0};
+        
+        switch (state.tailPosition) {
+
+            case TAIL_POSITION.UP:
+                newPosition = {
+                    x: state.x,
+                    y: state.y - this.size.height
+                };
+                break;
+
+            case TAIL_POSITION.DOWN:
+                newPosition = {
+                    x: state.x,
+                    y: state.y + this.size.height
+                };
+                break;
+
+            case TAIL_POSITION.RIGHT:
+                newPosition = {
+                    x: state.x + this.size.width,
+                    y: state.y
+                };
+                break;
+
+            case TAIL_POSITION.LEFT:
+                newPosition = {
+                    x: state.x - this.size.width,
+                    y: state.y
+                };
+                break;
+
+        }
+
+        this.state = {
+            x: newPosition.x,
+            y: newPosition.y,
+            headPosition: state.headPosition,
+            tailPosition: state.tailPosition
+        }
+        
+        this.updatePosition(
+            this.state.x,
+            this.state.y
+        );
+    }
+
+    public get getState(): BodyPartState {
+        return this.state;
+    }
+
     public setHead(headPosition: HEAD_POSITION): void {
 
-        switch (this.tailPosition) {
+        if (this.state.headPosition === headPosition) return;
+
+        switch (this.state.tailPosition) {
 
             case TAIL_POSITION.UP:
                 this.tailPart?.setHead(HEAD_POSITION.UP);
@@ -733,57 +843,29 @@ class SnakeTummy {
         }
 
 
-        switch (this.headPosition) {
+        switch (this.state.headPosition) {
 
             case HEAD_POSITION.UP:
-                this.tailPosition = TAIL_POSITION.UP;
+                this.state.tailPosition = TAIL_POSITION.UP;
                 break;
 
             case HEAD_POSITION.DOWN:
-                this.tailPosition = TAIL_POSITION.DOWN;
+                this.state.tailPosition = TAIL_POSITION.DOWN;
                 break;
 
             case HEAD_POSITION.RIGHT:
-                this.tailPosition = TAIL_POSITION.RIGHT;
+                this.state.tailPosition = TAIL_POSITION.RIGHT;
                 break;
 
             case HEAD_POSITION.LEFT:
-                this.tailPosition = TAIL_POSITION.LEFT;
+                this.state.tailPosition = TAIL_POSITION.LEFT;
                 break;
         }
 
-        this.headPosition = headPosition;
+        this.state.headPosition = headPosition;
     }
 
-    private updatePosition(x: number, y: number): void {
-        this.position = { x, y };
-    }
-
-    private moveForward() {
-        switch (this.headPosition) {
-
-            case HEAD_POSITION.UP:
-                this.updatePosition(this.position.x, this.position.y - this.speed);
-                break;
-
-            case HEAD_POSITION.DOWN:
-                this.updatePosition(this.position.x, this.position.y + this.speed);
-                break;
-
-            case HEAD_POSITION.RIGHT:
-                this.updatePosition(this.position.x + this.speed, this.position.y);
-                break;
-
-            case HEAD_POSITION.LEFT:
-                this.updatePosition(this.position.x - this.speed, this.position.y);
-                break;
-        }
-    }
-
-    public update(movement: boolean) {
-
-        if (movement)
-            this.moveForward();
+    public update(): void {
 
         this.ctx.save(); // save current state
         this.ctx.translate(this.position.x, this.position.y); // move origin to (x, y)
@@ -818,25 +900,30 @@ class SnakeTummy {
             this.size.width,
             this.size.height
         );
-        this.ctx.strokeStyle = "#000";
+        // this.ctx.strokeStyle = "#000";
+        // this.ctx.fillStyle = "#a72020ff";
+        this.ctx.fillStyle = "#000";
         this.ctx.lineWidth = this.SNAKE_TUMMY_STROKE;
-        this.ctx.stroke();
+        // this.ctx.stroke();
+        this.ctx.fill();
 
         this.ctx.beginPath();
         this.ctx.fillStyle = "#33ad24";
+        // this.ctx.fillStyle = "#4b24adff";
 
+        // console.log(HEAD_POSITION[this.state.headPosition] + ' _ ' + TAIL_POSITION[this.state.tailPosition]);
         if (
             (
-                this.headPosition === HEAD_POSITION.UP &&
-                this.tailPosition === TAIL_POSITION.DOWN
+                this.state.headPosition === HEAD_POSITION.UP &&
+                this.state.tailPosition === TAIL_POSITION.DOWN
             ) ||
             (
-                this.headPosition === HEAD_POSITION.DOWN &&
-                this.tailPosition === TAIL_POSITION.UP
+                this.state.headPosition === HEAD_POSITION.DOWN &&
+                this.state.tailPosition === TAIL_POSITION.UP
             )
         ) {
             this.ctx.rect(
-                - this.halfTummySize,
+                - this.halfTummySize + this.SNAKE_TUMMY_STROKE,
                 - this.halfTummySize,
                 this.SNAKE_TUMMY_SIZES.STRAIGHT,
                 this.size.height
@@ -844,29 +931,29 @@ class SnakeTummy {
         }
         else if (
             (
-                this.headPosition === HEAD_POSITION.RIGHT &&
-                this.tailPosition === TAIL_POSITION.LEFT
+                this.state.headPosition === HEAD_POSITION.RIGHT &&
+                this.state.tailPosition === TAIL_POSITION.LEFT
             ) ||
             (
-                this.headPosition === HEAD_POSITION.LEFT &&
-                this.tailPosition === TAIL_POSITION.RIGHT
+                this.state.headPosition === HEAD_POSITION.LEFT &&
+                this.state.tailPosition === TAIL_POSITION.RIGHT
             )
         ) {
             this.ctx.rect(
                 - this.halfTummySize,
-                - this.halfTummySize,
+                - this.halfTummySize + this.SNAKE_TUMMY_STROKE,
                 this.size.width,
                 this.SNAKE_TUMMY_SIZES.STRAIGHT
             )
         }
         else if (
             (
-                this.headPosition === HEAD_POSITION.RIGHT &&
-                this.tailPosition === TAIL_POSITION.DOWN
+                this.state.headPosition === HEAD_POSITION.RIGHT &&
+                this.state.tailPosition === TAIL_POSITION.DOWN
             ) ||
             (
-                this.headPosition === HEAD_POSITION.DOWN &&
-                this.tailPosition === TAIL_POSITION.RIGHT
+                this.state.headPosition === HEAD_POSITION.DOWN &&
+                this.state.tailPosition === TAIL_POSITION.RIGHT
             )
         ) {
 
@@ -879,12 +966,12 @@ class SnakeTummy {
         }
         else if (
             (
-                this.headPosition === HEAD_POSITION.LEFT &&
-                this.tailPosition === TAIL_POSITION.DOWN
+                this.state.headPosition === HEAD_POSITION.LEFT &&
+                this.state.tailPosition === TAIL_POSITION.DOWN
             ) ||
             (
-                this.headPosition === HEAD_POSITION.DOWN &&
-                this.tailPosition === TAIL_POSITION.LEFT
+                this.state.headPosition === HEAD_POSITION.DOWN &&
+                this.state.tailPosition === TAIL_POSITION.LEFT
             )
         ) {
 
@@ -897,12 +984,12 @@ class SnakeTummy {
         }
         else if (
             (
-                this.headPosition === HEAD_POSITION.RIGHT &&
-                this.tailPosition === TAIL_POSITION.UP
+                this.state.headPosition === HEAD_POSITION.RIGHT &&
+                this.state.tailPosition === TAIL_POSITION.UP
             ) ||
             (
-                this.headPosition === HEAD_POSITION.UP &&
-                this.tailPosition === TAIL_POSITION.RIGHT
+                this.state.headPosition === HEAD_POSITION.UP &&
+                this.state.tailPosition === TAIL_POSITION.RIGHT
             )
         ) {
 
@@ -915,12 +1002,12 @@ class SnakeTummy {
         }
         else if (
             (
-                this.headPosition === HEAD_POSITION.LEFT &&
-                this.tailPosition === TAIL_POSITION.UP
+                this.state.headPosition === HEAD_POSITION.LEFT &&
+                this.state.tailPosition === TAIL_POSITION.UP
             ) ||
             (
-                this.headPosition === HEAD_POSITION.UP &&
-                this.tailPosition === TAIL_POSITION.LEFT
+                this.state.headPosition === HEAD_POSITION.UP &&
+                this.state.tailPosition === TAIL_POSITION.LEFT
             )
         ) {
 
@@ -932,8 +1019,8 @@ class SnakeTummy {
             )
         }
         else if (
-            this.headPosition === HEAD_POSITION.UP &&
-            this.tailPosition === TAIL_POSITION.END
+            this.state.headPosition === HEAD_POSITION.UP &&
+            this.state.tailPosition === TAIL_POSITION.END
         ) {
 
             this.ctx.rect(
@@ -944,8 +1031,8 @@ class SnakeTummy {
             )
         }
         else if (
-            this.headPosition === HEAD_POSITION.DOWN &&
-            this.tailPosition === TAIL_POSITION.END
+            this.state.headPosition === HEAD_POSITION.DOWN &&
+            this.state.tailPosition === TAIL_POSITION.END
         ) {
 
             this.ctx.rect(
@@ -956,8 +1043,8 @@ class SnakeTummy {
             )
         }
         else if (
-            this.headPosition === HEAD_POSITION.RIGHT &&
-            this.tailPosition === TAIL_POSITION.END
+            this.state.headPosition === HEAD_POSITION.RIGHT &&
+            this.state.tailPosition === TAIL_POSITION.END
         ) {
 
             this.ctx.rect(
@@ -968,8 +1055,8 @@ class SnakeTummy {
             )
         }
         else if (
-            this.headPosition === HEAD_POSITION.LEFT &&
-            this.tailPosition === TAIL_POSITION.END
+            this.state.headPosition === HEAD_POSITION.LEFT &&
+            this.state.tailPosition === TAIL_POSITION.END
         ) {
 
             this.ctx.rect(
@@ -984,15 +1071,17 @@ class SnakeTummy {
         // ); // draw with center at origin
         this.ctx.restore(); // restore state (no rotation for next draw)
 
-
-        this.tailPart?.update(movement);
+        this.tailPart?.update();
     }
 }
+
 
 class RattlerSnake extends SnakeHead {
 
     private health = 2;
     private snakeFirstTummy: SnakeTummy;
+    private snakeLastTummy: SnakeTummy;
+    private TUMMY_SIZE: number;
 
     constructor(
         ctx: CanvasRenderingContext2D,
@@ -1001,28 +1090,61 @@ class RattlerSnake extends SnakeHead {
     ) {
         super(ctx, obstructionArray, snakeTexture);
 
+        // this.currentState = {
+        //     x: this.headState.x,
+        //     y: this.headState.y,
+        //     headPosition: this.headState.headPosition,
+        //     tailPosition: this.headState.tailPosition
+        // }
+
+        this.TUMMY_SIZE = (this.size.width / 2) + 3;
+
         this.snakeFirstTummy = new SnakeTummy(
             ctx,
             HEAD_POSITION.UP,
             TAIL_POSITION.DOWN,
             {
                 x: this.position.x,
-                y: this.position.y + 200
+                y: this.position.y + 10
             },
-            this.SNAKE_SPEED,
-            this.size.width / 2
+            this.TUMMY_SIZE
         );
+        this.snakeLastTummy = this.snakeFirstTummy;
     }
 
     public update(): void {
-        const allowed = this.updateSnakeHead();
-        this.snakeFirstTummy.update(allowed);
+        // console.log(HEAD_POSITION[this.currentState.headPosition]);
+        // if (
+        //     this.snakeFirstTummy.getState.headPosition !== this.headState.headPosition ||
+        //     this.snakeFirstTummy.getState.x !== this.headState.x ||
+        //     this.snakeFirstTummy.getState.y !== this.headState.y
+
+        // ) {
+        // }
+        this.snakeFirstTummy.updateState({ ...this.headState });
+        this.updateSnakeHead();
+        this.snakeFirstTummy.update();
     }
 
     public rotate(headPosition: HEAD_POSITION): void {
 
-        this.snakeFirstTummy.setHead(this.headPosition);
+        this.snakeFirstTummy.setHead(headPosition);
         this.rotateSnakeHead(headPosition);
+    }
+
+    public increaseHealth(): void {
+        const newSnakeTummy = new SnakeTummy(
+            this.ctx,
+            this.snakeLastTummy.getState.headPosition,
+            this.snakeLastTummy.getState.tailPosition,
+            {
+                x: this.snakeLastTummy.position.x,
+                y: this.snakeLastTummy.position.y + 22
+            },
+            this.TUMMY_SIZE
+        );
+        this.snakeLastTummy.tailPart = newSnakeTummy;
+        this.snakeLastTummy = newSnakeTummy;
     }
 }
 
@@ -1164,6 +1286,10 @@ export default function Page(): JSX.Element {
                         case 'a':
                         case 'arrowleft':
                             snakeObject.rotate(HEAD_POSITION.LEFT);
+                            break;
+
+                        case 'e':
+                            snakeObject.increaseHealth();
                             break;
 
                     }
