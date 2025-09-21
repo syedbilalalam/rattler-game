@@ -88,20 +88,20 @@ function createAngledGradient(
     angle: number
 ): CanvasGradient {
     // Convert angle (in degrees) to radians
-    let rad = angle * Math.PI / 180;
+    const rad = angle * Math.PI / 180;
 
     // Half-diagonal of the rectangle
-    let halfDiag = Math.sqrt(w * w + h * h) / 2;
+    const halfDiag = Math.sqrt(w * w + h * h) / 2;
 
     // Center point
-    let cx = x + w / 2;
-    let cy = y + h / 2;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
 
     // Start and end points along the angle
-    let x0 = cx + Math.cos(rad + Math.PI) * halfDiag;
-    let y0 = cy + Math.sin(rad + Math.PI) * halfDiag;
-    let x1 = cx + Math.cos(rad) * halfDiag;
-    let y1 = cy + Math.sin(rad) * halfDiag;
+    const x0 = cx + Math.cos(rad + Math.PI) * halfDiag;
+    const y0 = cy + Math.sin(rad + Math.PI) * halfDiag;
+    const x1 = cx + Math.cos(rad) * halfDiag;
+    const y1 = cy + Math.sin(rad) * halfDiag;
 
     return ctx.createLinearGradient(x0, y0, x1, y1);
 }
@@ -440,7 +440,7 @@ class SnakeTummy {
                 this.state.tailPosition === TAIL_POSITION.RIGHT
             )
         ) {
-            let gradient = this.ctx.createLinearGradient(
+            const gradient = this.ctx.createLinearGradient(
                 0,
                 - this.halfTummySize + SnakeTummy.STROKE,
                 0,
@@ -468,7 +468,7 @@ class SnakeTummy {
                 this.state.tailPosition === TAIL_POSITION.RIGHT
             )
         ) {
-            let gradient = this.ctx.createLinearGradient(
+            const gradient = this.ctx.createLinearGradient(
                 - this.halfTummySize + SnakeTummy.STROKE,
                 - this.halfTummySize + SnakeTummy.STROKE,
                 this.halfTummySize,
@@ -496,7 +496,7 @@ class SnakeTummy {
                 this.state.tailPosition === TAIL_POSITION.LEFT
             )
         ) {
-            let gradient = createAngledGradient(
+            const gradient = createAngledGradient(
                 this.ctx,
                 - this.halfTummySize + SnakeTummy.STROKE,
                 - this.halfTummySize + SnakeTummy.STROKE,
@@ -534,7 +534,7 @@ class SnakeTummy {
                 this.state.tailPosition === TAIL_POSITION.RIGHT
             )
         ) {
-            let gradient = createAngledGradient(
+            const gradient = createAngledGradient(
                 this.ctx,
                 - this.halfTummySize + SnakeTummy.STROKE,
                 - this.halfTummySize + SnakeTummy.STROKE,
@@ -573,7 +573,7 @@ class SnakeTummy {
                 this.state.tailPosition === TAIL_POSITION.LEFT
             )
         ) {
-            let gradient = createAngledGradient(
+            const gradient = createAngledGradient(
                 this.ctx,
                 - this.halfTummySize + SnakeTummy.STROKE + 5,
                 - this.halfTummySize + SnakeTummy.STROKE + 5,
