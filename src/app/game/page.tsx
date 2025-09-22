@@ -1,7 +1,8 @@
 'use client'
 import type { Dispatch, JSX, SetStateAction } from "react";
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import swal from 'sweetalert2';
+import { Enemy, EnemyInfo } from "@/classes/enemies";
 import '@/assets/style.css';
 import {
     F_L_OBJECT,
@@ -10,7 +11,8 @@ import {
 } from '@/maps/first_layer';
 import {
     RattlerSnake,
-    ObjectSize,
+    Position,
+    Size,
     ObstructionsArray,
     HEAD_POSITION
 } from '@/classes/snake';
@@ -27,6 +29,13 @@ interface GameTextures {
     TREE: HTMLImageElement;
     SNAKE_HEAD: HTMLImageElement;
     FIRED_HUT_ANGLES: HTMLImageElement[];
+    PENGUS: {
+        BLUE: HTMLImageElement;
+        PINK: HTMLImageElement;
+        RED: HTMLImageElement;
+        GREEN: HTMLImageElement;
+        BLACK: HTMLImageElement;
+    }
 }
 type FirstLayerObjectMapYComponent = Map<number, FiredHut | TreeObject>;
 type FirstLayerObjectMap = Map<number, FirstLayerObjectMapYComponent>;
@@ -126,7 +135,14 @@ async function loadTextures(): Promise<GameTextures> {
             new Image(),
             new Image(),
             new Image()
-        ]
+        ],
+        PENGUS: {
+            PINK: new Image(),
+            RED: new Image(),
+            BLUE: new Image(),
+            GREEN: new Image(),
+            BLACK: new Image()
+        }
     }
     const loadingTasks: Promise<void>[] = [];
 
@@ -162,6 +178,58 @@ async function loadTextures(): Promise<GameTextures> {
             resolve();
         }
         TEXTURES.SNAKE_HEAD.onerror = () => {
+            reject();
+        }
+    }));
+
+    // Loading pengues texture
+    loadingTasks.push(new Promise((resolve, reject) => {
+
+        TEXTURES.PENGUS.BLUE.src = '/images/enemies/blue_pengu.png';
+        TEXTURES.PENGUS.BLUE.onload = () => {
+            resolve();
+        }
+        TEXTURES.PENGUS.BLUE.onerror = () => {
+            reject();
+        }
+    }));
+    loadingTasks.push(new Promise((resolve, reject) => {
+
+        TEXTURES.PENGUS.RED.src = '/images/enemies/red_pengu.png';
+        TEXTURES.PENGUS.RED.onload = () => {
+            resolve();
+        }
+        TEXTURES.PENGUS.RED.onerror = () => {
+            reject();
+        }
+    }));
+    loadingTasks.push(new Promise((resolve, reject) => {
+
+        TEXTURES.PENGUS.PINK.src = '/images/enemies/pink_pengu.png';
+        TEXTURES.PENGUS.PINK.onload = () => {
+            resolve();
+        }
+        TEXTURES.PENGUS.PINK.onerror = () => {
+            reject();
+        }
+    }));
+    loadingTasks.push(new Promise((resolve, reject) => {
+
+        TEXTURES.PENGUS.GREEN.src = '/images/enemies/green_pengu.png';
+        TEXTURES.PENGUS.GREEN.onload = () => {
+            resolve();
+        }
+        TEXTURES.PENGUS.GREEN.onerror = () => {
+            reject();
+        }
+    }));
+    loadingTasks.push(new Promise((resolve, reject) => {
+
+        TEXTURES.PENGUS.BLACK.src = '/images/enemies/black_pengu.png';
+        TEXTURES.PENGUS.BLACK.onload = () => {
+            resolve();
+        }
+        TEXTURES.PENGUS.BLACK.onerror = () => {
             reject();
         }
     }));
@@ -258,11 +326,6 @@ function renderBackground(
     );
     ctx.fillStyle = backgroundTexturePattern;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Rendering background texture
-    // for (let row = 0; row < 9; row++)
-    //     for (let column = 0; column < 9; column++)
-    //         ctx.drawImage(backgroundTexture, (column * 100), (row * 82), 100, 82);
 }
 
 function renderFirstLayer(firstLayerObjectMap: FirstLayerObjectMap): void {
@@ -326,6 +389,185 @@ function launchError(err: unknown) {
     throw err;
 }
 
+class MainGame {
+
+    private scoreValue = 0;
+    private quitRequested = false;
+    private paused = false;
+    private overed = false;
+    private enemiesController: Enemy;
+    private snakeObject: RattlerSnake;
+    private firstLayerObstructions: ObstructionsArray;
+    private onOverFn = () => { };
+    private onScoreUpdateFn = () => { };
+
+    constructor(
+        private canvas: HTMLCanvasElement,
+        private ctx: CanvasRenderingContext2D,
+        private backgroundAudio: HTMLAudioElement,
+        private TEXTURES: GameTextures,
+        private firstLayerObjects: FirstLayerObjectMap
+    ) {
+
+        this.firstLayerObstructions = detectFirstLayerObstructions(this.canvas);
+
+        this.snakeObject = new RattlerSnake(
+            this.ctx,
+            this.firstLayerObstructions,
+            TEXTURES.SNAKE_HEAD,
+            (() => { this.gameOver() }),
+            ((val: number) => { this.updateScore(val) })
+        );
+        const enemiesInfo: EnemyInfo[] = [
+            {
+                texture: TEXTURES.PENGUS.BLUE,
+                size: {
+                    width: 50,
+                    height: 50
+                },
+                value: 10
+            },
+            {
+                texture: TEXTURES.PENGUS.RED,
+                size: {
+                    width: 50,
+                    height: 50
+                },
+                value: 10
+            },
+            {
+                texture: TEXTURES.PENGUS.PINK,
+                size: {
+                    width: 50,
+                    height: 50
+                },
+                value: 10
+            },
+            {
+                texture: TEXTURES.PENGUS.GREEN,
+                size: {
+                    width: 70,
+                    height: 70
+                },
+                value: 50
+            },
+            {
+                texture: TEXTURES.PENGUS.BLACK,
+                size: {
+                    width: 50,
+                    height: 50
+                },
+                value: 10
+            },
+        ];
+        this.enemiesController = new Enemy(this.canvas, this.ctx, enemiesInfo, [this.firstLayerObstructions], this.snakeObject)
+        this.snakeObject.setEnemyController(this.enemiesController);
+    }
+
+    private gameLoop(): void {
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        renderBackground(this.canvas, this.ctx, this.TEXTURES.BACKGROUND);
+        renderFirstLayer(this.firstLayerObjects);
+        renderSecondLayer(this.snakeObject);
+        this.enemiesController.draw();
+        // setTimeout(() => {
+        if (!this.paused && !this.quitRequested && !this.overed)
+            window.requestAnimationFrame(() => { this.gameLoop() });
+        // }, 1000);
+    }
+
+
+    public pause(): void {
+        this.paused = true;
+    }
+
+    public resume(): void {
+        this.paused = false;
+        this.gameLoop();
+    }
+
+    private gameOver(): void {
+        this.overed = true;
+        this.onOverFn();
+    }
+
+    public get isOvered(): boolean {
+        return this.overed;
+    }
+
+    public onOver(fn: () => void) {
+        this.onOverFn = fn;
+    }
+
+    public onScoreUpdate(fn: () => void) {
+        this.onScoreUpdateFn = fn;
+    }
+
+    private updateScore(scoreValue: number) {
+        this.scoreValue += scoreValue;
+        this.onScoreUpdateFn();
+    }
+
+    public get score(): number {
+        return this.scoreValue
+    }
+
+    public start(): void {
+
+        // Starting to listen keyboard events
+        window.onkeydown = (e) => {
+
+            this.backgroundAudio.play();
+
+            switch (e.key.toLowerCase()) {
+
+                case 'w':
+                case 'arrowup':
+                    this.snakeObject.rotate(HEAD_POSITION.UP);
+                    break;
+
+                case 's':
+                case 'arrowdown':
+                    this.snakeObject.rotate(HEAD_POSITION.DOWN);
+                    break;
+
+                case 'd':
+                case 'arrowright':
+                    this.snakeObject.rotate(HEAD_POSITION.RIGHT);
+                    break;
+
+                case 'a':
+                case 'arrowleft':
+                    this.snakeObject.rotate(HEAD_POSITION.LEFT);
+                    break;
+
+                case 'p':
+                case 'escape':
+                    if (this.paused) this.resume();
+                    else this.pause();
+                    break;
+            }
+        }
+
+        // Launching first enemy after
+        setTimeout(() => {
+            this.enemiesController.produce();
+        }, 3000);
+
+        // Initial health of snake
+        this.snakeObject.increaseHealth(3);
+
+        // Starting the game loop
+        this.gameLoop();
+    }
+
+    public quit(): void {
+        this.quitRequested = true;
+    }
+}
+
+
 export default function Page(): JSX.Element {
 
     useEffect(() => {
@@ -386,7 +628,6 @@ export default function Page(): JSX.Element {
         (async () => {
 
             try {
-
                 const TEXTURES = await loadTextures();
                 const firstLayerObjects = loadFirstLayerObjects(
                     c,
@@ -394,92 +635,12 @@ export default function Page(): JSX.Element {
                     TEXTURES.FIRED_HUT_ANGLES,
                     TEXTURES.TREE
                 );
-                const firstLayerObstructions = detectFirstLayerObstructions(c);
-                const snakeObject = new RattlerSnake(
-                    ctx,
-                    firstLayerObstructions,
-                    TEXTURES.SNAKE_HEAD
-                );
 
-                // Starting to listen keyboard events
-                window.onkeydown = (e) => {
+                let game = new MainGame(c, ctx, gameBackgroundAudio, TEXTURES, firstLayerObjects);
+                game.start();
+                game.onScoreUpdate(()=> {console.log(game.score)});
+                game.onOver(()=> {console.log('game overed'); game = new MainGame(c, ctx, gameBackgroundAudio, TEXTURES, firstLayerObjects); game.start() });
 
-                    gameBackgroundAudio.play();
-
-                    switch (e.key.toLowerCase()) {
-
-                        case 'w':
-                        case 'arrowup':
-                            snakeObject.rotate(HEAD_POSITION.UP);
-                            break;
-
-                        case 's':
-                        case 'arrowdown':
-                            snakeObject.rotate(HEAD_POSITION.DOWN);
-                            break;
-
-                        case 'd':
-                        case 'arrowright':
-                            snakeObject.rotate(HEAD_POSITION.RIGHT);
-                            break;
-
-                        case 'a':
-                        case 'arrowleft':
-                            snakeObject.rotate(HEAD_POSITION.LEFT);
-                            break;
-
-                        case 'e':
-                            snakeObject.increaseHealth(10);
-                            break;
-
-                    }
-                }
-
-                const gameLoop = () => {
-                    ctx.clearRect(0, 0, c.width, c.height);
-                    renderBackground(c, ctx, TEXTURES.BACKGROUND);
-                    renderFirstLayer(firstLayerObjects);
-                    renderSecondLayer(snakeObject);
-
-
-                    // let gradient = ctx.createLinearGradient(100, 100, 200, 0);
-                    // gradient.addColorStop(0, 'white');
-                    // gradient.addColorStop(0.5, 'yellow');
-                    // gradient.addColorStop(1, 'white');
-                    // ctx.fillStyle = gradient;
-                    // ctx.rect(
-                    //     100,
-                    //     100,
-                    //     100,
-                    //     100
-                    // )
-                    // ctx.fill();
-
-
-                    // let x = 50, y = 50, w = 300, h = 100, r = 30; // rect + radius
-                    // ctx.beginPath();
-                    // // Start at top-left + radius
-                    // ctx.moveTo(x + r, y);
-                    // // Top edge
-                    // ctx.lineTo(x + w, y);
-                    // // Right edge
-                    // ctx.lineTo(x + w, y + h);
-                    // // Bottom edge
-                    // ctx.lineTo(x, y + h);
-                    // // Left edge up until curve start
-                    // ctx.lineTo(x, y + r);
-                    // // Top-left corner curve
-                    // ctx.quadraticCurveTo(x, y, x + r, y);
-                    // ctx.closePath();
-
-                    // ctx.fillStyle = 'white';
-                    // ctx.fill();
-
-                    // setTimeout(() => {
-                    window.requestAnimationFrame(gameLoop);
-                    // }, 1000);
-                }
-                gameLoop();
             }
             catch (err) {
                 launchError(err);

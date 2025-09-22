@@ -1,3 +1,5 @@
+import { Enemy, EnemyObstruction } from '@/classes/enemies';
+
 export enum HEAD_POSITION {
     UP,
     DOWN,
@@ -22,11 +24,11 @@ type Point = {
     y: number;
 }
 
-type Position = {
+export type Position = {
     x: number;
     y: number;
 }
-type Size = {
+export type Size = {
     width: number;
     height: number;
 }
@@ -40,24 +42,26 @@ interface Axis {
     y: number;
 }
 
-interface TreeParams {
-    position: Axis;
-    size: ObjectSize;
+export type Obstruction = { x: number; y: number; width: number; height: number; };
+export type ObstructionsArray = Obstruction[];
+
+export function checkPointObstruction(obstruction: Obstruction, point: Point) {
+
+    if (
+        point.x >= obstruction.x && point.x <= (obstruction.x + obstruction.width)
+        &&
+        point.y >= obstruction.y && point.y <= (obstruction.y + obstruction.height)
+
+    ) return true;
+
+    return false;
 }
 
-export type ObstructionsArray = { x: number; y: number; width: number; height: number; }[];
-
-function isPointObstructed(obstructionsArray: ObstructionsArray, point: Point): boolean {
+export function isPointObstructed(obstructionsArray: ObstructionsArray, point: Point): boolean {
 
     for (const obstruction of obstructionsArray) {
-        if (
-            point.x >= obstruction.x && point.x <= (obstruction.x + obstruction.width)
-            &&
-            point.y >= obstruction.y && point.y <= (obstruction.y + obstruction.height)
-
-        ) return true;
+        if (checkPointObstruction(obstruction, point)) return true
     }
-
     return false;
 }
 
@@ -106,152 +110,6 @@ function createAngledGradient(
     return ctx.createLinearGradient(x0, y0, x1, y1);
 }
 
-class SnakeHead {
-    protected position: Position = {
-        x: 150,
-        y: 150
-    };
-    protected state: BodyPartState = {
-        x: this.position.x,
-        y: this.position.y,
-        headPosition: HEAD_POSITION.UP,
-        tailPosition: TAIL_POSITION.DOWN
-    };
-    private stateAngle = {
-        head: this.state.headPosition,
-        tail: this.state.tailPosition
-    };
-    private rotateRequested = 0;
-    protected static readonly SIZE: Size = {
-        width: 40,
-        height: 70
-    };
-    protected static readonly SPEED = 20;
-    protected static readonly HALF_WIDTH = SnakeHead.SIZE.width / 2;
-    protected static readonly HALF_HEIGHT = SnakeHead.SIZE.height / 2;
-
-    constructor(
-        protected ctx: CanvasRenderingContext2D,
-        private obstructionArray: ObstructionsArray,
-        private snakeTexture: HTMLImageElement
-    ) { }
-
-    protected rotateSnakeHead(headPosition: HEAD_POSITION) {
-
-        this.state.headPosition = headPosition;
-        this.state.tailPosition = getTailIfHead(headPosition);
-        this.rotateRequested = 1;
-    }
-
-    private updatePosition(x: number, y: number): boolean {
-
-        const SnakeHeadPoints: Point[] = [];
-
-        SnakeHeadPoints.push({
-            x: x - SnakeHead.HALF_WIDTH,
-            y: y + SnakeHead.HALF_HEIGHT
-        });
-        SnakeHeadPoints.push({
-            x: x + SnakeHead.HALF_WIDTH,
-            y: y + SnakeHead.HALF_HEIGHT
-        });
-
-        SnakeHeadPoints.push({
-            x: x - SnakeHead.HALF_WIDTH,
-            y: y - SnakeHead.HALF_HEIGHT
-        });
-
-        SnakeHeadPoints.push({
-            x: x + SnakeHead.HALF_WIDTH,
-            y: y - SnakeHead.HALF_HEIGHT
-        });
-
-        let obstructed = false;
-        for (const { x, y } of SnakeHeadPoints) {
-            if (isPointObstructed(this.obstructionArray, { x, y })) {
-                obstructed = true;
-                break;
-            }
-        }
-
-        if (obstructed) {
-            // Updating state
-            this.state.x = 0;
-            this.state.y = 0;
-
-            return false;
-        }
-        else {
-            // Updating state
-            this.state.x = x - this.position.x;
-            this.state.y = y - this.position.y;
-
-            this.position = { x, y };
-            return true;
-        }
-
-    }
-
-    public moveForward(): boolean {
-        switch (this.state.headPosition) {
-
-            case HEAD_POSITION.UP:
-                return this.updatePosition(this.position.x, this.position.y - SnakeHead.SPEED);
-
-            case HEAD_POSITION.DOWN:
-                return this.updatePosition(this.position.x, this.position.y + SnakeHead.SPEED);
-
-            case HEAD_POSITION.RIGHT:
-                return this.updatePosition(this.position.x + SnakeHead.SPEED, this.position.y);
-
-            case HEAD_POSITION.LEFT:
-                return this.updatePosition(this.position.x - SnakeHead.SPEED, this.position.y);
-        }
-    }
-
-    protected get headState(): BodyPartState {
-        return {
-            ...this.position,
-            headPosition: this.state.headPosition,
-            tailPosition: this.state.tailPosition
-        }
-    }
-
-    protected draw(): void {
-
-        this.ctx.save(); // save current state
-        this.ctx.translate(this.position.x, this.position.y); // move origin to (x, y)
-        switch (this.state.headPosition) {
-
-            case HEAD_POSITION.UP:
-                this.ctx.rotate(0);   // rotate canvas
-                break;
-
-            case HEAD_POSITION.DOWN:
-                this.ctx.rotate(Math.PI);   // rotate canvas
-                break;
-
-            case HEAD_POSITION.RIGHT:
-                this.ctx.rotate(Math.PI / 2);   // rotate canvas
-                break;
-
-            case HEAD_POSITION.LEFT:
-                this.ctx.rotate(Math.PI / 2 + Math.PI);   // rotate canvas
-                break;
-        }
-        this.ctx.drawImage(
-
-            this.snakeTexture,
-            -SnakeHead.HALF_WIDTH,
-            -SnakeHead.SIZE.height + 8,
-            SnakeHead.SIZE.width,
-            SnakeHead.SIZE.height
-
-        ); // draw with center at origin
-        this.ctx.restore(); // restore state (no rotation for next draw)
-
-    }
-}
 class SnakeTummy {
     private static readonly STROKE = 1;
     private static readonly COLOR = '#19850bff';
@@ -281,7 +139,8 @@ class SnakeTummy {
         headPosition: HEAD_POSITION,
         tailPosition: TAIL_POSITION,
         public position: Position,
-        tummySize: number
+        tummySize: number,
+        public id: number
     ) {
         if (HEAD_POSITION[headPosition] === TAIL_POSITION[tailPosition]) throw new Error(
             "Logic error snake's tummay can't have same head and tail values"
@@ -382,6 +241,23 @@ class SnakeTummy {
         this.state.headPosition = headPosition;
     }
 
+    public isObstructed(x: number, y: number, minId = 3): boolean {
+        if (this.id > minId && checkPointObstruction(
+            {
+                x: this.position.x - this.halfTummySize,
+                y: this.position.y - this.halfTummySize,
+                width: this.size.width,
+                height: this.size.height
+            },
+            { x, y }
+        )) {
+            return true
+        }
+        else if (this.tailPart) return this.tailPart.isObstructed(x, y)
+
+        return false;
+    }
+
     public draw(): void {
 
         this.ctx.save(); // save current state
@@ -398,6 +274,8 @@ class SnakeTummy {
         this.ctx.fillStyle = SnakeTummy.STROKE_COLOR;
         this.ctx.stroke();
         this.ctx.fill();
+
+        // Updating obstructions
 
         this.ctx.beginPath();
         this.ctx.fillStyle = SnakeTummy.COLOR;
@@ -657,32 +535,41 @@ class SnakeTummy {
         this.tailPart?.draw();
     }
 }
-
-export class RattlerSnake extends SnakeHead {
-
-    private health = 1;
-    private snakeFirstTummy: SnakeTummy;
-    private snakeLastTummy: SnakeTummy;
-    private TUMMY_SIZE: number;
-    private requestedRotateValue: HEAD_POSITION | null = null;
-    private lastUpdated = 0;
-    private static readonly DELAY = 60;
+abstract class SnakeHead {
+    private gameOverRequested = false;
+    protected selfObstructions: ObstructionsArray = [];
+    protected snakeFirstTummy: SnakeTummy;
+    protected position: Position = {
+        x: 550,
+        y: 550
+    };
+    protected state: BodyPartState = {
+        x: this.position.x,
+        y: this.position.y,
+        headPosition: HEAD_POSITION.UP,
+        tailPosition: TAIL_POSITION.DOWN
+    };
+    protected static readonly SIZE: Size = {
+        width: 40,
+        height: 70
+    };
+    protected static readonly SPEED = 20;
+    protected static readonly HALF_WIDTH = SnakeHead.SIZE.width / 2;
+    protected static readonly HALF_HEIGHT = SnakeHead.SIZE.height / 2;
+    protected static readonly TUMMY_SIZE = SnakeHead.HALF_WIDTH + 3;
+    private static readonly HEALTH = new Map([
+        [10, 2,],
+        [50, 10,],
+    ]);
+    private enemyController: Enemy | null = null;
 
     constructor(
-        ctx: CanvasRenderingContext2D,
-        obstructionArray: ObstructionsArray,
-        snakeTexture: HTMLImageElement
+        protected ctx: CanvasRenderingContext2D,
+        private obstructionArray: ObstructionsArray,
+        private snakeTexture: HTMLImageElement,
+        private onGameOverFn: () => void,
+        private scoreUpdaterFn: (score: number) => void
     ) {
-        super(ctx, obstructionArray, snakeTexture);
-
-        // this.currentState = {
-        //     x: this.headState.x,
-        //     y: this.headState.y,
-        //     headPosition: this.headState.headPosition,
-        //     tailPosition: this.headState.tailPosition
-        // }
-
-        this.TUMMY_SIZE = RattlerSnake.HALF_WIDTH + 3;
 
         this.snakeFirstTummy = new SnakeTummy(
             ctx,
@@ -692,31 +579,187 @@ export class RattlerSnake extends SnakeHead {
                 x: 100,
                 y: 100
             },
-            this.TUMMY_SIZE
+            SnakeHead.TUMMY_SIZE,
+            1
         );
+    }
+    abstract increaseHealth(hp: number): void;
+
+    public setEnemyController(enemyController: Enemy): void {
+        this.enemyController = enemyController;
+    }
+
+    protected rotateSnakeHead(headPosition: HEAD_POSITION) {
+
+        this.state.headPosition = headPosition;
+        this.state.tailPosition = getTailIfHead(headPosition);
+    }
+
+    private updatePosition(x: number, y: number): boolean {
+
+        const SnakeHeadPoints: Point[] = [];
+
+        SnakeHeadPoints.push({
+            x: x - SnakeHead.HALF_WIDTH,
+            y: y + SnakeHead.HALF_HEIGHT
+        });
+        SnakeHeadPoints.push({
+            x: x + SnakeHead.HALF_WIDTH,
+            y: y + SnakeHead.HALF_HEIGHT
+        });
+
+        SnakeHeadPoints.push({
+            x: x - SnakeHead.HALF_WIDTH,
+            y: y - SnakeHead.HALF_HEIGHT
+        });
+
+        SnakeHeadPoints.push({
+            x: x + SnakeHead.HALF_WIDTH,
+            y: y - SnakeHead.HALF_HEIGHT
+        });
+
+        let obstructed = false;
+        for (const { x, y } of SnakeHeadPoints) {
+            if (
+                isPointObstructed(this.obstructionArray, { x, y }) ||
+                (
+                    // this.snakeFirstTummy.isObstructed(x,y)
+                    this.snakeFirstTummy.tailPart &&
+                    // this.snakeFirstTummy.tailPart.tailPart &&
+                    this.snakeFirstTummy.tailPart.isObstructed(x, y)
+                )
+            ) {
+                obstructed = true;
+                break;
+            }
+        }
+        if (this.enemyController)
+            for (const { x, y } of SnakeHeadPoints) {
+
+                for (const obstruction of this.enemyController.obstructionsArray) {
+                    if (checkPointObstruction(obstruction, { x, y })) {
+
+                        const value = this.enemyController.kill(obstruction.id)
+
+                        this.scoreUpdaterFn(value);
+                        const healthValue = SnakeHead.HEALTH.get(value);
+                        if (healthValue)
+                            this.increaseHealth(healthValue);
+
+                        setTimeout(() => {
+                            this.enemyController?.produce();
+                        }, 2000);
+
+                        break;
+                    }
+                };
+
+            }
+
+        if (obstructed) {
+            // Updating state
+            this.state.x = 0;
+            this.state.y = 0;
+            if (!this.gameOverRequested) {
+                this.onGameOverFn();
+                this.gameOverRequested = true;
+            }
+            return false;
+        }
+        else {
+
+            // Updating state
+            this.state.x = x - this.position.x;
+            this.state.y = y - this.position.y;
+
+            this.position = { x, y };
+            return true;
+        }
+
+    }
+
+    public moveForward(): boolean {
+        switch (this.state.headPosition) {
+
+            case HEAD_POSITION.UP:
+                return this.updatePosition(this.position.x, this.position.y - SnakeHead.SPEED);
+
+            case HEAD_POSITION.DOWN:
+                return this.updatePosition(this.position.x, this.position.y + SnakeHead.SPEED);
+
+            case HEAD_POSITION.RIGHT:
+                return this.updatePosition(this.position.x + SnakeHead.SPEED, this.position.y);
+
+            case HEAD_POSITION.LEFT:
+                return this.updatePosition(this.position.x - SnakeHead.SPEED, this.position.y);
+        }
+    }
+
+    protected get headState(): BodyPartState {
+        return {
+            ...this.position,
+            headPosition: this.state.headPosition,
+            tailPosition: this.state.tailPosition
+        }
+    }
+
+    protected draw(): void {
+
+        this.ctx.save(); // save current state
+        this.ctx.translate(this.position.x, this.position.y); // move origin to (x, y)
+        switch (this.state.headPosition) {
+
+            case HEAD_POSITION.UP:
+                this.ctx.rotate(0);   // rotate canvas
+                break;
+
+            case HEAD_POSITION.DOWN:
+                this.ctx.rotate(Math.PI);   // rotate canvas
+                break;
+
+            case HEAD_POSITION.RIGHT:
+                this.ctx.rotate(Math.PI / 2);   // rotate canvas
+                break;
+
+            case HEAD_POSITION.LEFT:
+                this.ctx.rotate(Math.PI / 2 + Math.PI);   // rotate canvas
+                break;
+        }
+        this.ctx.drawImage(
+
+            this.snakeTexture,
+            -SnakeHead.HALF_WIDTH,
+            -SnakeHead.SIZE.height + 8,
+            SnakeHead.SIZE.width,
+            SnakeHead.SIZE.height
+
+        ); // draw with center at origin
+        this.ctx.restore(); // restore state (no rotation for next draw)
+
+    }
+}
+
+export class RattlerSnake extends SnakeHead {
+
+    private health = 1;
+    private snakeLastTummy: SnakeTummy;
+    private lastUpdated = 0;
+    private static readonly DELAY = 60;
+    private tummyId = 2;
+
+    constructor(
+        ctx: CanvasRenderingContext2D,
+        obstructionArray: ObstructionsArray,
+        snakeTexture: HTMLImageElement,
+        onGameOverFn: () => void,
+        scoreUpdaterFn: (score: number) => void
+    ) {
+        super(ctx, obstructionArray, snakeTexture, onGameOverFn, scoreUpdaterFn);
         this.snakeLastTummy = this.snakeFirstTummy;
     }
 
-    private updateRotate(): void {
-        this.snakeFirstTummy.updateState({
-            ...this.headState,
-            headPosition: this.headState.headPosition,
-            tailPosition: this.headState.tailPosition
-        });
-    }
-
-    private updateMovement(): void {
-        if (
-            this.snakeFirstTummy.getState.x !== this.headState.x ||
-            this.snakeFirstTummy.getState.y !== (this.headState.y)
-        ) {
-
-            this.snakeFirstTummy.updateState({
-                ...this.snakeFirstTummy.getState,
-                x: this.headState.x,
-                y: this.headState.y
-            });
-        }
+    public doesSnakeObstructs(x: number, y: number): boolean {
+        return this.snakeFirstTummy.isObstructed(x, y, 0);
     }
 
     private updateState(): void {
@@ -775,7 +818,8 @@ export class RattlerSnake extends SnakeHead {
                 x: this.snakeLastTummy.position.x,
                 y: this.snakeLastTummy.position.y
             },
-            this.TUMMY_SIZE
+            SnakeHead.TUMMY_SIZE,
+            this.tummyId++
         );
         newSnakeTummy.headPart = this.snakeLastTummy;
         this.snakeLastTummy.tailPart = newSnakeTummy;
