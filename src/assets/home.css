@@ -43,3 +43,10 @@
     width: 100%;
     /* position: absolute; */
 }
+
+.menuTagLine {
+    color: var(--main-light-color);
+    text-align: center;
+    font-size: 20px;
+    padding: 20px 2px;
+}

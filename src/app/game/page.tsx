@@ -266,6 +266,10 @@ export default function Page(): JSX.Element {
         })();
     }, []);
 
+    useEffect(() => {
+        // Resetting window events
+        window.onresize = () => { };
+    }, [screenType]);
 
     const startGame = () => {
         updateScreenType(SCREEN.GAME);
@@ -322,5 +326,5 @@ export default function Page(): JSX.Element {
                 )
             }
         </>
-    )
+    );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState, type JSX, useRef } from 'react';
+import Typed from 'typed.js';
 import '@/assets/home.css';
 import '@/assets/button.css';
 
@@ -39,17 +40,42 @@ function LoginButton(): JSX.Element {
 export function HomeScreen({ startGame, openSettings, bannerImage }: HomeScreenComponentProps): JSX.Element {
 
     const [fullScreen, setFullScreenStatus] = useState(false);
+    // const [screenResize, triggerResize] = useState(0);
+
     const bannerImageHolder = useRef<HTMLDivElement>(null);
     const fullScreenButton = useRef<HTMLButtonElement>(null);
+    const menuTagLine = useRef<HTMLSpanElement>(null);
+    const gameMenu = useRef<HTMLDivElement>(null);
+    const pageRenderCount = useRef(0);
 
     useEffect(() => {
-        if (!bannerImageHolder.current) throw new Error('Invalid HTML');
+        if (
+            !bannerImageHolder.current ||
+            !gameMenu.current
+        ) throw new Error('Invalid HTML');
+
+        pageRenderCount.current++;
 
         bannerImage.classList.add('gameMenuImage');
         bannerImageHolder.current.append(bannerImage);
 
         if (document.fullscreenElement)
             setFullScreenStatus(true);
+
+        if (pageRenderCount.current === 1)
+            new Typed(menuTagLine.current!, {
+                strings: ["Welcome to Rattler's World"],
+                typeSpeed: 50
+            });
+
+        window.onresize = () => {
+            if (window.innerHeight <= gameMenu.current!.scrollHeight) {
+                gameMenu.current!.classList.remove('centered');
+            }
+            else {
+                gameMenu.current!.classList.add('centered');
+            }
+        }
     }, []);
 
     useEffect(() => {
@@ -91,12 +117,10 @@ export function HomeScreen({ startGame, openSettings, bannerImage }: HomeScreenC
     return (
         <>
             <div id={'menuHolder'}>
-                <div id={'gameMenu'} className={'centered'}>
-                    <div className={'bannerImageHolder'} ref={bannerImageHolder}>
-                        {/* <img
-                        className={'gameMenuImage'}
-                        src={'/images/menu.png'} alt={'Rattler'}
-                    ></img> */}
+                <div id={'gameMenu'} className={'centered'} ref={gameMenu}>
+                    <div className={'bannerImageHolder'} ref={bannerImageHolder}></div>
+                    <div className={'menuTagLine'}>
+                        <span ref={menuTagLine}></span>
                     </div>
                     <div className={'buttonsHolder'}>
                         <button

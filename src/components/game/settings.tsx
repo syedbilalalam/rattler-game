@@ -117,6 +117,7 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
     const [fullScreen, setFullScreenStatus] = useState(false);
     const fullScreenButton = useRef<HTMLButtonElement>(null);
 
+    const gameMenu = useRef<HTMLDivElement>(null);
     const bannerImageHolder = useRef<HTMLDivElement>(null);
     const musicToggle = useRef<HTMLButtonElement>(null);
     const sfxToggle = useRef<HTMLButtonElement>(null);
@@ -174,6 +175,14 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
             updateSfxSliderFocusStatus(false);
         });
 
+        window.onresize = () => {
+            if (window.innerHeight <= gameMenu.current!.scrollHeight) {
+                gameMenu.current!.classList.remove('centered');
+            }
+            else {
+                gameMenu.current!.classList.add('centered');
+            }
+        }
     }, []);
 
     useEffect(() => {
@@ -271,7 +280,7 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
     return (
         <>
             <div id={'menuHolder'}>
-                <div id={'gameMenu'} className={'centered'}>
+                <div id={'gameMenu'} className={'centered'} ref={gameMenu}>
                     <div className={'bannerImageHolder'} ref={bannerImageHolder}></div>
 
                     <div className={'settingsHolder'}>

@@ -45,18 +45,30 @@ export function ScoreAtMenu({ currentScore, highScore }: ScoreAtMenuComponentPro
 export function PauseMenu({ bannerImage, score, resume, callSettings, mainMenu }: PauseMenuComponentProps): JSX.Element {
 
     const bannerImageHolder = useRef<HTMLDivElement>(null);
-
+    const gameMenu = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!bannerImageHolder.current) throw new Error('Invalid HTML');
+        if (
+            !bannerImageHolder.current ||
+            !gameMenu.current
+        ) throw new Error('Invalid HTML');
 
         bannerImageHolder.current.replaceChildren(bannerImage);
+
+        window.onresize = () => {
+            if (window.innerHeight <= gameMenu.current!.scrollHeight) {
+                gameMenu.current!.classList.remove('centered');
+            }
+            else {
+                gameMenu.current!.classList.add('centered');
+            }
+        }
     }, []);
 
     return (
         <>
             <div id={'menuHolder'}>
-                <div id={'gameMenu'} className={'centered'}>
+                <div id={'gameMenu'} className={'centered'} ref={gameMenu}>
                     <div className={'bannerImageHolder'} ref={bannerImageHolder}></div>
 
                     <div className={'pauseTitle'}>

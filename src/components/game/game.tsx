@@ -543,6 +543,9 @@ export function Game({
         if (gameState === GAME_STATE.OVER && gameScore > gameHighScore)
             updateHighScore(gameScore);
 
+        // Resetting window events
+        window.onresize = () => { };
+        
     }, [gameState]);
 
     const updateHighScore = (score: number) => {
