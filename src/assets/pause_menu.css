@@ -1,0 +1,29 @@
+.pauseTitle {
+    font-size: 30px;
+    font-weight: bold;
+    color: var(--main-light-color);
+    text-align: center;
+    padding: 10px;
+}
+.pauseTitle p {
+    font-weight: 200;
+    padding: 10px;
+    font-size: 18px;
+}
+
+/* Score card */
+.menuScore {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.menuScore .toggleRow .right{
+    max-width: fit-content;
+}
+.menuScore .toggleRow .score{
+    min-width: 12%;
+}
+.menuScore .toggleRow .highScore{
+    min-width: 20%;
+}

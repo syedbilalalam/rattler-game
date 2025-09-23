@@ -1,0 +1,22 @@
+{
+    "/public/audio/musics/game_1.dat": {
+        "ext": "mp3",
+        "mime": "audio/mpeg"
+    },
+    "/public/images/menu.dat": {
+        "ext": "png",
+        "mime": "image/png"
+    },
+    "/public/images/settings/volume_bar_head.dat": {
+        "ext": "png",
+        "mime": "image/png"
+    },
+    "/public/images/settings/volume_bar_holded_head.dat": {
+        "ext": "png",
+        "mime": "image/png"
+    },
+    "/public/icons/pause.dat": {
+        "ext": "png",
+        "mime": "image/png"
+    }
+}

@@ -1,0 +1,39 @@
+.settingsHolder {
+    padding: 20px;
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+}
+
+.settingsHolder .game-box {
+    margin: 5px 0;
+    width: 100%;
+}
+
+.toggleRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.toggleRow .left {
+    width: 100%;
+}
+.toggleRow .right {
+    max-width: 25%;
+    width: 100%;
+}
+.sliderHolder {
+    padding: 0 20px;
+}
+.volumeParent {
+    background-color: #00000034;
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: var(--main-light-color);
+    border: 1px solid var(--bg-color);
+    border-radius: 10px;
+    padding: 5px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}

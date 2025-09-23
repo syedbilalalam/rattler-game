@@ -1,3 +1,8 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap');
+* {
+    font-family: Orbitron, monospace;
+}
 #gameWindow {
     /* height: 80vh; */
     /* width: 90vw; */
@@ -21,6 +26,8 @@ canvas {
     border: 3px solid black;
     /* margin: 100px; */
     height: 100vh;
+    margin: 0 auto;
+    display: block;
 }
 
 #backgroundImage {
@@ -29,4 +36,34 @@ canvas {
     position: fixed;
     object-fit: cover;
     filter: blur(9px);
+    z-index: -1;
+}
+
+.gameBar {
+    position: fixed;
+    top: 2px;
+    left: 2px;
+    width: 300px;
+    /* background-color: red; */
+    z-index: 3;
+    padding: 5px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+.gameBar .pause{
+    width: 50px !important;
+    padding: 5px;
+    cursor: pointer;
+    background-color: var(--main-light-color);
+    border-radius: 10px;
+    border-radius: 3px solid pink;
+    /* border-color: var(--main-extra-light-color); */
+}
+.gameBar .game-box {
+    width: fit-content;
+    font-size: 18px;
+}
+.gameBar .pause img{
+    width: 100%;
 }
