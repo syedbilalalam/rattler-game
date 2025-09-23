@@ -2,7 +2,7 @@
 import { type JSX, useEffect, useRef, useState } from 'react';
 import { Game } from '@/components/game/game';
 import { HomeScreen } from '@/components/game/home';
-import { Settings } from '@/components/game/settings/main';
+import { Settings } from '@/components/game/settings';
 
 enum SCREEN {
     HOME,
