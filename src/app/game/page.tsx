@@ -1,5 +1,6 @@
 'use client'
 import { type JSX, useEffect, useRef, useState } from 'react';
+import '@/assets/scrollbar.css';
 import { Game } from '@/components/game/game';
 import { HomeScreen } from '@/components/game/home';
 import { Settings } from '@/components/game/settings';

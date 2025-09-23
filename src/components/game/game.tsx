@@ -281,7 +281,7 @@ class MainGame {
                 texture: TEXTURES.PENGUS.BLUE,
                 size: {
                     width: 50,
-                    height: 77
+                    height: 65
                 },
                 value: 10
             },

@@ -4,4 +4,10 @@
   --main-dark-color: #b37400;
   --main-light-color: #ffcc00;
   --bg-color: #1e1e2f;     /* dark background */
+  /* --scrollbar-fill: #0000;
+  --scrollbar-thumb: #34ae28;
+  --scrollbar-thumb-holded: #046e16; */
+  --scrollbar-fill: #0000;
+  --scrollbar-thumb: #ffcc00;
+  --scrollbar-thumb-holded: #ff6600;
 }
