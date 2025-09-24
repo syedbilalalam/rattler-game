@@ -475,6 +475,7 @@ export default function Page(): JSX.Element {
         const formattedVolume = (updatedVolumeLevel * (1 / 100));
         audioElements.forEach(audio => {
             audio.current!.volume = formattedVolume;
+            audio.current!.muted = formattedVolume ? false : true;
         });
         volume.current[type] = updatedVolumeLevel;
         audioSessionUpdate();
