@@ -514,7 +514,10 @@ export function Game({
         gameStatus.current.running = true;
 
         // Start game music
-        music.game.play();
+        setTimeout(()=> {
+
+            music.game.play();
+        }, 1000);
 
         // loading high scores
         const sessionData = localStorage.getItem(RATTLER_DATA_SESSION_NAME);
