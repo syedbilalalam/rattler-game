@@ -1,14 +1,25 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import '@/assets/home.css';
 import '@/assets/root.css';
-import '@/assets/settings.css';
 import '@/assets/slider.css';
-import { SettingsTextures } from '@/app/game/page';
+import '@/assets/settings.css';
+import { GameButton } from '@/components/game_button';
+import {
+    AudioManager,
+    SettingsTextures,
+    SfxManager,
+    VolumeObject
+} from '@/app/game/page';
+
+type OnOffButtonText = 'On' | 'Off';
 
 interface SettingsComponentProps {
     bannerImage: HTMLImageElement;
     gotoParent: () => void;
     textures: SettingsTextures;
+    sfx: SfxManager;
+    audioManager: AudioManager;
+    volume: VolumeObject;
 }
 
 class Slider {
@@ -108,19 +119,26 @@ class Slider {
     }
 };
 
-export function Settings({ bannerImage, gotoParent, textures }: SettingsComponentProps): JSX.Element {
+export function Settings({
+    bannerImage,
+    gotoParent,
+    textures,
+    sfx,
+    audioManager,
+    volume
+}: SettingsComponentProps): JSX.Element {
 
-    const [musicVolume, setVolume] = useState(100);
-    const [sfxVolume, setSfxVolume] = useState(100);
+    const [musicVolume, setVolume] = useState(volume.musics);
+    const [sfxVolume, setSfxVolume] = useState(volume.sfx);
     const [musicSliderFocused, updateMusicSliderFocusStatus] = useState(false);
     const [sfxSliderFocused, updateSfxSliderFocusStatus] = useState(false);
     const [fullScreen, setFullScreenStatus] = useState(false);
-    const fullScreenButton = useRef<HTMLButtonElement>(null);
+    const [fullScreenText, setFullScreenText] = useState('Full Screen');
+    const [musicToggleText, setMusicToggleText] = useState<OnOffButtonText>('On');
+    const [sfxToggleText, setSfxToggleText] = useState<OnOffButtonText>('On');
 
     const gameMenu = useRef<HTMLDivElement>(null);
     const bannerImageHolder = useRef<HTMLDivElement>(null);
-    const musicToggle = useRef<HTMLButtonElement>(null);
-    const sfxToggle = useRef<HTMLButtonElement>(null);
     const musicSlider = useRef<Slider>(null);
     const sfxSlider = useRef<Slider>(null);
     const music = {
@@ -128,7 +146,7 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
         sliderFill: useRef<HTMLDivElement>(null),
         sliderThumb: useRef<HTMLDivElement>(null)
     };
-    const sfx = {
+    const sfxAdjustment = {
         slider: useRef<HTMLDivElement>(null),
         sliderFill: useRef<HTMLDivElement>(null),
         sliderThumb: useRef<HTMLDivElement>(null)
@@ -136,14 +154,13 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
 
     useEffect(() => {
         if (
-            !bannerImageHolder.current || !musicToggle.current ||
+            !bannerImageHolder.current ||
             !music.sliderFill.current || !music.sliderThumb.current || !music.slider.current ||
-            !sfx.sliderFill.current || !sfx.sliderThumb.current || !sfx.slider.current
+            !sfxAdjustment.sliderFill.current || !sfxAdjustment.sliderThumb.current || !sfxAdjustment.slider.current
         ) throw new Error('Invalid HTML');
 
         bannerImage.classList.add('gameMenuImage');
-
-        bannerImageHolder.current.append(bannerImage);
+        bannerImageHolder.current.replaceChildren(bannerImage);
 
         musicSlider.current = new Slider(
             music.sliderThumb.current,
@@ -161,12 +178,15 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
         });
 
         sfxSlider.current = new Slider(
-            sfx.sliderThumb.current,
-            sfx.slider.current,
-            sfx.sliderFill.current
+            sfxAdjustment.sliderThumb.current,
+            sfxAdjustment.slider.current,
+            sfxAdjustment.sliderFill.current
         );
         sfxSlider.current.onUpdate((value) => {
             setSfxVolume(value);
+
+            // Test sound for users
+            sfx('snakeEat');
         });
         sfxSlider.current.onFocus(() => {
             updateSfxSliderFocusStatus(true);
@@ -174,6 +194,7 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
         sfxSlider.current.onBlur(() => {
             updateSfxSliderFocusStatus(false);
         });
+        if (volume.sfx) setSfxVolume(volume.sfx)
 
         window.onresize = () => {
             if (window.innerHeight <= gameMenu.current!.scrollHeight) {
@@ -183,6 +204,8 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
                 gameMenu.current!.classList.add('centered');
             }
         }
+
+
     }, []);
 
     useEffect(() => {
@@ -194,65 +217,43 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
     }, [musicSliderFocused]);
 
     useEffect(() => {
-        if (!sfx.sliderThumb.current) throw new Error('Invalid HTML');
+
+        if (!sfxAdjustment.sliderThumb.current) throw new Error('Invalid HTML');
+
         if (sfxSliderFocused)
-            sfx.sliderThumb.current.replaceChildren(textures.sfxVolumeBarHoldedHead);
+            sfxAdjustment.sliderThumb.current.replaceChildren(textures.sfxVolumeBarHoldedHead);
         else
-            sfx.sliderThumb.current.replaceChildren(textures.sfxVolumeBarHead);
+            sfxAdjustment.sliderThumb.current.replaceChildren(textures.sfxVolumeBarHead);
+
     }, [sfxSliderFocused]);
 
     useEffect(() => {
-        if (!musicToggle.current || !musicSlider.current) throw new Error('Invalid HTML');
+        if (!musicSlider.current) throw new Error('Invalid HTML');
 
-        if (!musicVolume) {
-            musicToggle.current.innerText = 'Off';
-        }
-        else {
-            musicToggle.current.innerText = 'On';
-        }
-
-        musicToggle.current.onclick = () => {
-            if (musicVolume) setVolume(0);
-            else setVolume(100);
-        }
+        setMusicToggleText(musicVolume ? 'On' : 'Off');
 
         musicSlider.current.updateValue = musicVolume;
+
+        // Applying changes to all sfx
+        audioManager('musics', musicVolume);
 
     }, [musicVolume]);
 
     useEffect(() => {
-        if (!sfxToggle.current || !sfxSlider.current) throw new Error('Invalid HTML');
+        if (!sfxSlider.current) throw new Error('Invalid HTML');
 
-        if (!sfxVolume) {
-            sfxToggle.current.innerText = 'Off';
-        }
-        else {
-            sfxToggle.current.innerText = 'On';
-        }
-
-        sfxToggle.current.onclick = () => {
-            if (sfxVolume) setSfxVolume(0);
-            else setSfxVolume(100);
-        }
+        setSfxToggleText(sfxVolume ? 'On' : 'Off');
 
         sfxSlider.current.updateValue = sfxVolume;
 
+        // Applying changes to all sfx
+        audioManager('sfx', sfxVolume);
+
     }, [sfxVolume]);
-
-
 
     useEffect(() => {
 
-        if (!fullScreenButton.current) throw new Error('Incomplete HTML Element');
-
-        if (fullScreen) fullScreenButton.current.innerText = 'Exit';
-        else fullScreenButton.current.innerText = 'Full Screen'
-
-        fullScreenButton.current.onclick = async () => {
-            if (fullScreen) exitFullScreen();
-            else setToFullScreen();
-        }
-
+        setFullScreenText(fullScreen ? 'Exit' : 'Full Screen');
         window.onblur = exitFullScreen;
 
     }, [fullScreen]);
@@ -302,9 +303,9 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
                             <p className={'settingTitle'}>Sound Effects</p>
                             <div className={'sfxController'}>
                                 <div className={'sliderHolder'}>
-                                    <div className={'slider'} ref={sfx.slider}>
-                                        <div className={'sliderFill'} ref={sfx.sliderFill}></div>
-                                        <div className={'sliderThumb'} ref={sfx.sliderThumb}>
+                                    <div className={'slider'} ref={sfxAdjustment.slider}>
+                                        <div className={'sliderFill'} ref={sfxAdjustment.sliderFill}></div>
+                                        <div className={'sliderThumb'} ref={sfxAdjustment.sliderThumb}>
                                         </div>
                                     </div>
                                 </div>
@@ -317,7 +318,13 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
                                 className={'game-box left'}
                                 style={{ fontSize: '18px' }}
                             >Game Music:</div>
-                            <button className={'game-btn sm right'} ref={musicToggle}>ON</button>
+                            <GameButton
+                                className={'game-btn sm right'}
+                                sfx={sfx}
+                                onClick={() => {
+                                    setVolume(musicVolume ? 0 : 100);
+                                }}
+                            >{musicToggleText}</GameButton>
                         </div>
 
                         <div className={'toggleRow'}>
@@ -326,16 +333,30 @@ export function Settings({ bannerImage, gotoParent, textures }: SettingsComponen
                                 style={{ fontSize: '18px' }}
                             >Sound Effects:
                             </div>
-                            <button className={'game-btn sm right'} ref={sfxToggle}>ON</button>
+                            <GameButton
+                                className={'game-btn sm right'}
+                                sfx={sfx}
+                                onClick={() => {
+                                    setSfxVolume(sfxVolume ? 0 : 100);
+                                }}
+                            >{sfxToggleText}</GameButton>
                         </div>
                     </div>
 
                     <div className={'buttonsHolder'}>
-                        <button className={'game-btn sm'} ref={fullScreenButton}>Full Screen</button>
-                        <button
+                        <GameButton
                             className={'game-btn sm'}
+                            sfx={sfx}
+                            onClick={() => {
+                                if (fullScreen) exitFullScreen();
+                                else setToFullScreen();
+                            }}
+                        >{fullScreenText}</GameButton>
+                        <GameButton
+                            className={'game-btn sm'}
+                            sfx={sfx}
                             onClick={gotoParent}
-                        >Back</button>
+                        >Back</GameButton>
                     </div>
                 </div>
             </div>

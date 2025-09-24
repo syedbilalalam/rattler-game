@@ -3,18 +3,20 @@ import '@/assets/home.css';
 import '@/assets/root.css';
 import '@/assets/settings.css';
 import '@/assets/pause_menu.css';
+import { SfxManager } from '@/app/game/page';
+import { GameButton } from '@/components/game_button';
 
 interface PauseMenuComponentProps {
     bannerImage: HTMLImageElement;
     score: {
         current: number;
         high: number;
-    }
+    };
+    sfx: SfxManager;
     resume: () => void;
     callSettings: () => void;
     mainMenu: () => void;
 }
-
 
 interface ScoreAtMenuComponentProps {
     currentScore: number;
@@ -42,7 +44,7 @@ export function ScoreAtMenu({ currentScore, highScore }: ScoreAtMenuComponentPro
     )
 }
 
-export function PauseMenu({ bannerImage, score, resume, callSettings, mainMenu }: PauseMenuComponentProps): JSX.Element {
+export function PauseMenu({ bannerImage, score, sfx, resume, callSettings, mainMenu }: PauseMenuComponentProps): JSX.Element {
 
     const bannerImageHolder = useRef<HTMLDivElement>(null);
     const gameMenu = useRef<HTMLDivElement>(null);
@@ -83,24 +85,26 @@ export function PauseMenu({ bannerImage, score, resume, callSettings, mainMenu }
 
 
                     <div className={'buttonsHolder'}>
-                        <button
+                        <GameButton
                             className={'game-btn sm'}
+                            sfx={sfx}
                             onClick={resume}
-                        >
-                            Resume
-                        </button>
-                        <button
+                        >Resume
+                        </GameButton>
+
+                        <GameButton
                             className={'game-btn sm'}
+                            sfx={sfx}
                             onClick={callSettings}
-                        >
-                            Settings
-                        </button>
-                        <button
+                        >Settings
+                        </GameButton>
+                        
+                        <GameButton
                             className={'game-btn sm'}
+                            sfx={sfx}
                             onClick={mainMenu}
-                        >
-                            Leave Game
-                        </button>
+                        >Leave Game
+                        </GameButton>
                     </div>
                 </div>
             </div>

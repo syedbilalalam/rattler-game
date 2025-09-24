@@ -4,20 +4,22 @@ import '@/assets/home.css';
 import '@/assets/root.css';
 import '@/assets/settings.css';
 import '@/assets/pause_menu.css';
+import { SfxManager } from '@/app/game/page';
 import { ScoreAtMenu } from '@/components/game/pause';
+import { GameButton } from '@/components/game_button';
 
 interface GameOverMenuComponentProps {
     bannerImage: HTMLImageElement;
     score: {
         current: number;
         high: number;
-    }
+    };
+    sfx: SfxManager
     playAgain: () => void;
     mainMenu: () => void;
 }
 
-
-export function GameOverMenu({ bannerImage, score, playAgain, mainMenu }: GameOverMenuComponentProps): JSX.Element {
+export function GameOverMenu({ bannerImage, score, sfx, playAgain, mainMenu }: GameOverMenuComponentProps): JSX.Element {
 
     const gameMenu = useRef<HTMLDivElement>(null);
     const bannerImageHolder = useRef<HTMLDivElement>(null);
@@ -78,18 +80,17 @@ export function GameOverMenu({ bannerImage, score, playAgain, mainMenu }: GameOv
 
 
                     <div className={'buttonsHolder'}>
-                        <button
+                        <GameButton
                             className={'game-btn sm'}
+                            sfx={sfx}
                             onClick={playAgain}
-                        >
-                            Play Again
-                        </button>
-                        <button
+                        >Play Again</GameButton>
+
+                        <GameButton
                             className={'game-btn sm'}
+                            sfx={sfx}
                             onClick={mainMenu}
-                        >
-                            Main Menu
-                        </button>
+                        >Main Menu</GameButton>
                     </div>
                 </div>
             </div>

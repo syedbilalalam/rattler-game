@@ -1,5 +1,37 @@
 {
-    "/public/audio/musics/game_1.dat": {
+    "/public/audio/musics/main_menu.dat": {
+        "ext": "mp3",
+        "mime": "audio/mpeg"
+    },
+    "/public/audio/musics/game.dat": {
+        "ext": "wav",
+        "mime": "audio/wav"
+    },
+    "/public/audio/musics/pause_menu.dat": {
+        "ext": "mp3",
+        "mime": "audio/mpeg"
+    },
+    "/public/audio/sfx/button_click.dat": {
+        "ext": "wav",
+        "mime": "audio/wav"
+    },
+    "/public/audio/sfx/button_hover.dat": {
+        "ext": "mp3",
+        "mime": "audio/mpeg"
+    },
+    "/public/audio/sfx/snake_eat.dat": {
+        "ext": "mp3",
+        "mime": "audio/mpeg"
+    },
+    "/public/audio/sfx/pengu_pop.dat": {
+        "ext": "wav",
+        "mime": "audio/wav"
+    },
+    "/public/audio/sfx/game_over.dat": {
+        "ext": "wav",
+        "mime": "audio/wav"
+    },
+    "/public/audio/sfx/high_score.dat": {
         "ext": "mp3",
         "mime": "audio/mpeg"
     },

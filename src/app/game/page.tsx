@@ -12,6 +12,11 @@ enum SCREEN {
     GAME
 }
 
+enum DEFAULT_AUDIO_SETTINGS {
+    MUSIC = 70,
+    SFX = 100
+}
+
 export interface GameTextures {
     BACKGROUND: HTMLImageElement;
     TREE: HTMLImageElement;
@@ -35,6 +40,44 @@ export interface SettingsTextures {
 export interface GameIcons {
     pause: HTMLImageElement;
 }
+
+export interface ButtonSfx {
+    hovered: () => void;
+    clicked: () => void;
+}
+
+export interface GameSfx {
+    snakeEat: () => void;
+    penguPop: () => void;
+    gameOver: () => void;
+    highScore: () => void;
+}
+
+export interface VolumeObject {
+    musics: number;
+    sfx: number;
+}
+
+// Loading sound data
+interface SoundSession {
+    musicVolume: number;
+    sfxVolume: number;
+}
+const SOUND_SESSION_NAME = 'rattlerAudio';
+
+type ProjectMimeTypes =
+    'audio/mpeg' |
+    'audio/wav';
+
+type SfxManagerKey = 'buttonHover' |
+    'buttonClicked' |
+    'snakeEat' |
+    'penguPop' |
+    'gameOver' |
+    'highScore'
+export type SfxManager = (keyName: SfxManagerKey) => void;
+export type AudioManager = (type: 'sfx' | 'musics', volume: number) => void;
+
 async function loadTextures(): Promise<GameTextures> {
     const TEXTURES: GameTextures = {
         BACKGROUND: new Image(100, 82),
@@ -169,17 +212,44 @@ async function loadTextures(): Promise<GameTextures> {
     return TEXTURES;
 }
 
+async function getContentObjectUrl(url: string, mimeType: ProjectMimeTypes): Promise<string> {
+    const rawBlob = await (await fetch(url)).blob();
+    const blob = new Blob([rawBlob], { type: mimeType });
+    const blobUrl = URL.createObjectURL(blob);
+    return blobUrl;
+}
+
 export default function Page(): JSX.Element {
 
     const [screenType, updateScreenType] = useState(SCREEN.HOME);
     const [gameLoaded, updateGameLoadingStatus] = useState(false);
 
     // For loading things
-    const gameBackgroundAudio = useRef<HTMLAudioElement>(null);
     const TEXTURES = useRef<GameTextures>(null);
     const gameIcons = useRef<GameIcons>(null);
     const bannerImage = useRef<HTMLImageElement>(null);
     const settingsTextures = useRef<SettingsTextures>(null);
+    const volume = useRef<VolumeObject>({
+        musics: DEFAULT_AUDIO_SETTINGS.MUSIC,
+        sfx: DEFAULT_AUDIO_SETTINGS.SFX
+    });
+
+    const audio = {
+        musics: {
+            home: useRef<HTMLAudioElement>(null),
+            game: useRef<HTMLAudioElement>(null),
+            pauseMenu: useRef<HTMLAudioElement>(null)
+        },
+        sfx: {
+            buttonHover: useRef<HTMLAudioElement>(null),
+            buttonClicked: useRef<HTMLAudioElement>(null),
+            snakeEat: useRef<HTMLAudioElement>(null),
+            penguPop: useRef<HTMLAudioElement>(null),
+            gameOver: useRef<HTMLAudioElement>(null),
+            highScore: useRef<HTMLAudioElement>(null)
+        }
+    }
+
     const gameStatus = useRef({
         running: false
     });
@@ -188,15 +258,93 @@ export default function Page(): JSX.Element {
         (async () => {
 
             // Loading audios
-            const audioRawBlob = await (await fetch('/audio/musics/game_1.dat')).blob();
-            const audioBlob = new Blob([audioRawBlob], { type: 'audio/mpeg' })
-            const url = URL.createObjectURL(audioBlob);
-            gameBackgroundAudio.current = new Audio(url);
-            gameBackgroundAudio.current.loop = true;
-            gameBackgroundAudio.current.onload = () => {
-                URL.revokeObjectURL(url);
+            // Main menu audio
+            const homeMusicRawBlob = await (await fetch('/audio/musics/main_menu.dat')).blob();
+            const homeMusicBlob = new Blob([homeMusicRawBlob], { type: 'audio/mpeg' })
+            const homeMusicUrl = URL.createObjectURL(homeMusicBlob);
+            audio.musics.home.current = new Audio(homeMusicUrl);
+            audio.musics.home.current.loop = true;
+            audio.musics.home.current.onload = () => {
+                URL.revokeObjectURL(homeMusicUrl);
+            }
+            // Game play music
+            const gameMusicUrl = await getContentObjectUrl(
+                '/audio/musics/game.dat',
+                'audio/wav'
+            );
+            audio.musics.game.current = new Audio(gameMusicUrl);
+            audio.musics.game.current.loop = true;
+            audio.musics.game.current.onload = () => {
+                URL.revokeObjectURL(gameMusicUrl);
+            }
+            // Pause menu music
+            const pauseMenuMusicUrl = await getContentObjectUrl(
+                '/audio/musics/pause_menu.dat',
+                'audio/mpeg'
+            );
+            audio.musics.pauseMenu.current = new Audio(pauseMenuMusicUrl);
+            audio.musics.pauseMenu.current.loop = true;
+            audio.musics.pauseMenu.current.onload = () => {
+                URL.revokeObjectURL(pauseMenuMusicUrl);
             }
 
+            // Sfx
+            // Button hover
+            const btnHoverSfxUrl = await getContentObjectUrl(
+                '/audio/sfx/button_hover.dat',
+                'audio/mpeg'
+            );
+            audio.sfx.buttonHover.current = new Audio(btnHoverSfxUrl);
+            audio.sfx.buttonHover.current.onload = () => {
+                URL.revokeObjectURL(btnHoverSfxUrl);
+            }
+            // Button clicked
+            const btnClickedSfxUrl = await getContentObjectUrl(
+                '/audio/sfx/button_click.dat',
+                'audio/wav'
+            );
+            audio.sfx.buttonClicked.current = new Audio(btnClickedSfxUrl);
+            audio.sfx.buttonClicked.current.onload = () => {
+                URL.revokeObjectURL(btnClickedSfxUrl);
+            }
+            // Snake eat
+            const snakeEatSfxUrl = await getContentObjectUrl(
+                '/audio/sfx/snake_eat.dat',
+                'audio/mpeg'
+            );
+            audio.sfx.snakeEat.current = new Audio(snakeEatSfxUrl);
+            audio.sfx.snakeEat.current.onload = () => {
+                URL.revokeObjectURL(snakeEatSfxUrl);
+            }
+            // Pengu pop
+            const penguPopSfxUrl = await getContentObjectUrl(
+                '/audio/sfx/pengu_pop.dat',
+                'audio/wav'
+            );
+            audio.sfx.penguPop.current = new Audio(penguPopSfxUrl);
+            audio.sfx.penguPop.current.onload = () => {
+                URL.revokeObjectURL(penguPopSfxUrl);
+            }
+            // Game over sfx
+            const gameOverSfxUrl = await getContentObjectUrl(
+                '/audio/sfx/game_over.dat',
+                'audio/wav'
+            );
+            audio.sfx.gameOver.current = new Audio(gameOverSfxUrl);
+            audio.sfx.gameOver.current.onload = () => {
+                URL.revokeObjectURL(gameOverSfxUrl);
+            }
+            // Hight score sfx
+            const highScoreSfxUrl = await getContentObjectUrl(
+                '/audio/sfx/high_score.dat',
+                'audio/mpeg'
+            );
+            audio.sfx.highScore.current = new Audio(highScoreSfxUrl);
+            audio.sfx.highScore.current.onload = () => {
+                URL.revokeObjectURL(highScoreSfxUrl);
+            }
+
+            // Loading canvas textures
             TEXTURES.current = await loadTextures();
 
             // Loading banner image
@@ -263,6 +411,18 @@ export default function Page(): JSX.Element {
                 pause: pauseIcon
             }
 
+            const soundSession = localStorage.getItem(SOUND_SESSION_NAME);
+            if (soundSession) {
+                try {
+                    const soundData: SoundSession = JSON.parse(soundSession);
+                    audioManager('musics', soundData.musicVolume);
+                    audioManager('sfx', soundData.sfxVolume);
+                }
+                catch {
+                    localStorage.removeItem(SOUND_SESSION_NAME)
+                }
+            }
+
             updateGameLoadingStatus(true);
         })();
     }, []);
@@ -270,7 +430,18 @@ export default function Page(): JSX.Element {
     useEffect(() => {
         // Resetting window events
         window.onresize = () => { };
-    }, [screenType]);
+
+        if (gameLoaded) {
+
+            if (screenType !== SCREEN.HOME && screenType !== SCREEN.SETTING) {
+                audio.musics.home.current!.pause();
+                audio.musics.home.current!.currentTime = 0;
+            }
+
+            audio.musics.game.current!.pause();
+            audio.musics.pauseMenu.current!.pause();
+        }
+    }, [screenType, gameLoaded]);
 
     const startGame = () => {
         updateScreenType(SCREEN.GAME);
@@ -282,6 +453,31 @@ export default function Page(): JSX.Element {
 
     const gotoHome = () => {
         updateScreenType(SCREEN.HOME);
+    }
+
+    const sfxManager: SfxManager = (keyName) => {
+        audio.sfx[keyName].current!.currentTime = 0;
+        audio.sfx[keyName].current!.play();
+    }
+
+    const audioSessionUpdate = () => {
+        const packedData = JSON.stringify(
+            {
+                musicVolume: volume.current.musics,
+                sfxVolume: volume.current.sfx
+            } as SoundSession
+        );
+        localStorage.setItem(SOUND_SESSION_NAME, packedData);
+    }
+
+    const audioManager: AudioManager = (type, updatedVolumeLevel) => {
+        const audioElements = Object.values(audio[type]);
+        const formattedVolume = (updatedVolumeLevel * (1 / 100));
+        audioElements.forEach(audio => {
+            audio.current!.volume = formattedVolume;
+        });
+        volume.current[type] = updatedVolumeLevel;
+        audioSessionUpdate();
     }
 
     return (
@@ -300,17 +496,25 @@ export default function Page(): JSX.Element {
                         startGame={startGame}
                         openSettings={openSettings}
                         bannerImage={bannerImage.current!}
+                        homeMusic={audio.musics.home.current!}
+                        sfx={sfxManager}
                     />
 
                 ) : (screenType === SCREEN.GAME) ? (
 
                     <Game
-                        gameBackgroundAudio={gameBackgroundAudio.current!}
                         TEXTURES={TEXTURES.current!}
                         bannerImage={bannerImage.current!}
                         settingsMenuProps={{
                             textures: settingsTextures.current!
                         }}
+                        music={{
+                            game: audio.musics.game.current!,
+                            pauseMenu: audio.musics.pauseMenu.current!
+                        }}
+                        audioManager={audioManager}
+                        sfx={sfxManager}
+                        volume={volume.current}
                         gameStatus={gameStatus}
                         icons={gameIcons.current!}
                         mainMenu={gotoHome}
@@ -321,6 +525,9 @@ export default function Page(): JSX.Element {
                         bannerImage={bannerImage.current!}
                         gotoParent={gotoHome}
                         textures={settingsTextures.current!}
+                        sfx={sfxManager}
+                        audioManager={audioManager}
+                        volume={volume.current}
                     />
                 ) : (
                     <></>

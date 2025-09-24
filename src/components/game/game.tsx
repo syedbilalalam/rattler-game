@@ -1,11 +1,19 @@
 import type { JSX, RefObject } from "react";
-import { useEffect, useState, useRef } from 'react';
 import '@/assets/style.css';
-import { Enemy, EnemyInfo } from "@/classes/enemies";
+import { useEffect, useState, useRef } from 'react';
 import { PauseMenu } from '@/components/game/pause';
+import { Enemy, EnemyInfo } from "@/classes/enemies";
 import { Settings } from '@/components/game/settings';
 import { GameOverMenu } from '@/components/game/over';
-import { GameIcons, GameTextures, SettingsTextures } from '@/app/game/page';
+import { GameButton } from "@/components/game_button";
+import {
+    AudioManager,
+    GameIcons,
+    GameTextures,
+    SettingsTextures,
+    SfxManager,
+    VolumeObject
+} from '@/app/game/page';
 import {
     RattlerSnake,
     Position,
@@ -19,6 +27,8 @@ import {
     MAP_2D
 } from '@/maps/first_layer';
 
+
+const RATTLER_DATA_SESSION_NAME = 'rattlerData';
 enum GAME_STATE {
     PLAY,
     PAUSE,
@@ -28,6 +38,31 @@ enum GAME_STATE {
 
 type FirstLayerObjectMapYComponent = Map<number, FiredHut | TreeObject>;
 type FirstLayerObjectMap = Map<number, FirstLayerObjectMapYComponent>;
+
+
+interface RattlerData {
+    highScore: number;
+}
+
+interface GameComponentProps {
+    bannerImage: HTMLImageElement
+    settingsMenuProps: {
+        textures: SettingsTextures;
+    },
+    music: {
+        game: HTMLAudioElement;
+        pauseMenu: HTMLAudioElement;
+    };
+    audioManager: AudioManager;
+    sfx: SfxManager;
+    volume: VolumeObject;
+    TEXTURES: GameTextures;
+    icons: GameIcons;
+    gameStatus: RefObject<{
+        running: boolean;
+    }>;
+    mainMenu: () => void;
+}
 
 class FiredHut {
 
@@ -245,6 +280,8 @@ function launchError(err: unknown) {
     throw err;
 }
 
+export type OnPenguPopFn = (penguValue: number) => void;
+export type OnScoreUpdateFn = (score: number) => void;
 class MainGame {
 
     private scoreValue = 0;
@@ -258,11 +295,11 @@ class MainGame {
     private onScoreUpdateFn = (score: number) => { };
     private onPauseFn = () => { };
     private onResumeFn = () => { };
+    private onPenguPopFn = (penguValue: number) => { };
 
     constructor(
         private canvas: HTMLCanvasElement,
         private ctx: CanvasRenderingContext2D,
-        private backgroundAudio: HTMLAudioElement,
         private TEXTURES: GameTextures,
         private firstLayerObjects: FirstLayerObjectMap
     ) {
@@ -273,7 +310,11 @@ class MainGame {
             this.ctx,
             this.firstLayerObstructions,
             TEXTURES.SNAKE_HEAD,
-            (() => { this.gameOver() }),
+            {
+                gameOver: () => { this.gameOver() },
+                penguPop: (penguValue: number) => { this.managePenguLaunch(penguValue) },
+                scoreUpdate: (score: number) => { this.updateScore(score) }
+            },
             ((val: number) => { this.updateScore(val) })
         );
         const enemiesInfo: EnemyInfo[] = [
@@ -335,11 +376,11 @@ class MainGame {
         // }, 1000);
     }
 
-    public onOver(fn: (score: number) => void) {
+    public onOver(fn: OnScoreUpdateFn) {
         this.onOverFn = fn;
     }
 
-    public onScoreUpdate(fn: (score: number) => void) {
+    public onScoreUpdate(fn: OnScoreUpdateFn) {
         this.onScoreUpdateFn = fn;
     }
 
@@ -349,6 +390,10 @@ class MainGame {
 
     public onResume(fn: () => void): void {
         this.onResumeFn = fn;
+    }
+
+    public onPenguPop(fn: OnPenguPopFn): void {
+        this.onPenguPopFn = fn;
     }
 
     public pause(): void {
@@ -374,7 +419,11 @@ class MainGame {
 
     private updateScore(scoreValue: number) {
         this.scoreValue += scoreValue;
-        this.onScoreUpdateFn(this.score);
+        this.onScoreUpdateFn(this.scoreValue);
+    }
+
+    private managePenguLaunch(value: number): void {
+        if (!this.paused && !this.overed) this.onPenguPopFn(value);
     }
 
     public get score(): number {
@@ -385,8 +434,6 @@ class MainGame {
 
         // Starting to listen keyboard events
         window.onkeydown = (e) => {
-
-            this.backgroundAudio.play();
 
             switch (e.key.toLowerCase()) {
 
@@ -420,7 +467,8 @@ class MainGame {
 
         // Launching first enemy after
         setTimeout(() => {
-            this.enemiesController.produce();
+            const value = this.enemiesController.produce();
+            this.onPenguPopFn(value);
         }, 3000);
 
         // Initial health of snake
@@ -434,29 +482,13 @@ class MainGame {
         this.quitRequested = true;
     }
 }
-
-interface RattlerData {
-    highScore: number;
-}
-
-interface GameComponentProps {
-    gameBackgroundAudio: HTMLAudioElement;
-    bannerImage: HTMLImageElement
-    settingsMenuProps: {
-        textures: SettingsTextures;
-    },
-    TEXTURES: GameTextures;
-    icons: GameIcons;
-    gameStatus: RefObject<{
-        running: boolean;
-    }>;
-    mainMenu: () => void;
-}
-
 export function Game({
-    gameBackgroundAudio,
     bannerImage,
     settingsMenuProps,
+    music,
+    audioManager,
+    sfx,
+    volume,
     TEXTURES,
     icons,
     gameStatus,
@@ -470,22 +502,24 @@ export function Game({
     const gameWindow = useRef<HTMLCanvasElement>(null);
     const gameController = useRef<MainGame>(null);
     const pauseBtn = useRef<HTMLDivElement>(null);
-    // const ctxGlobal = useRef<CanvasRenderingContext2D>(null);
 
     useEffect(() => {
         if (gameStatus.current.running) return;
         if (!gameWindow.current || !pauseBtn.current) throw new Error('Incomplete HTML');
         gameStatus.current.running = true;
 
+        // Start game music
+        music.game.play();
+
         // loading high scores
-        const sessionData = localStorage.getItem('rattlerData');
+        const sessionData = localStorage.getItem(RATTLER_DATA_SESSION_NAME);
         if (sessionData) {
             try {
                 const rattlerData: RattlerData = JSON.parse(sessionData);
                 setGameHighScore(rattlerData.highScore);
             }
             catch {
-                localStorage.clear();
+                localStorage.removeItem(RATTLER_DATA_SESSION_NAME)
             }
         }
 
@@ -498,7 +532,6 @@ export function Game({
             throw new Error('Browser is too older for managing high graphic engine');
         }
 
-
         (async () => {
 
             try {
@@ -510,7 +543,7 @@ export function Game({
                     TEXTURES.TREE
                 );
 
-                gameController.current = new MainGame(c, ctx, gameBackgroundAudio, TEXTURES, firstLayerObjects);
+                gameController.current = new MainGame(c, ctx, TEXTURES, firstLayerObjects);
                 setGameScore(gameController.current.score);
                 gameController.current.start();
                 gameController.current.onOver(() => {
@@ -523,7 +556,13 @@ export function Game({
                 gameController.current.onResume(() => {
                     setGameState(GAME_STATE.PLAY);
                 });
-                gameController.current.onScoreUpdate(setGameScore);
+                gameController.current.onScoreUpdate((score) => {
+                    sfx('snakeEat');
+                    setGameScore(score);
+                });
+                gameController.current.onPenguPop((penguValue) => {
+                    sfx('penguPop');
+                });
             }
             catch (err) {
                 launchError(err);
@@ -535,24 +574,48 @@ export function Game({
     useEffect(() => {
         if (!gameWindow.current) throw new Error('Invalid HTML');
 
-        if (gameState !== GAME_STATE.PLAY)
+        if (gameState !== GAME_STATE.PLAY) {
             gameWindow.current.style.filter = 'blur(9px)';
-        else
+            music.game.pause();
+        }
+        else {
             gameWindow.current.style.filter = 'none';
+            music.game.play();
+            music.pauseMenu.pause();
+        }
 
-        if (gameState === GAME_STATE.OVER && gameScore > gameHighScore)
-            updateHighScore(gameScore);
+        if (gameState === GAME_STATE.PAUSE) {
+            music.pauseMenu.play();
+        }
+
+        if (gameState === GAME_STATE.OVER) {
+
+            let timeoutValue = 1000;
+
+            if (gameScore > gameHighScore) {
+                updateHighScore(gameScore);
+                sfx('highScore');
+                timeoutValue = 2500;
+            }
+            else {
+                sfx('gameOver');
+            }
+
+            setTimeout(() => {
+                music.pauseMenu.play();
+            }, timeoutValue);
+        }
 
         // Resetting window events
         window.onresize = () => { };
-        
+
     }, [gameState]);
 
     const updateHighScore = (score: number) => {
         const rattlerData: RattlerData = {
             highScore: score
         }
-        localStorage.setItem('rattlerData', JSON.stringify(rattlerData));
+        localStorage.setItem(RATTLER_DATA_SESSION_NAME, JSON.stringify(rattlerData));
         setGameHighScore(score);
     }
 
@@ -579,6 +642,8 @@ export function Game({
 
     const terminateGame = () => {
         gameStatus.current.running = false;
+        music.game.pause();
+        music.game.currentTime = 0;
     }
 
     const leaveGame = () => {
@@ -589,20 +654,26 @@ export function Game({
     return (
         <>
             <div className={'gameBar'}>
-                <div
-                    className={'pause game-btn'}
+                <GameButton
                     ref={pauseBtn}
+                    className={'pause game-btn'}
+                    sfx={sfx}
                     onClick={pauseGame}
-                ></div>
+                ></GameButton>
                 <div className={'game-box sm'}>SCORE: {gameScore}</div>
             </div>
+
             <canvas height={900} width={1100} ref={gameWindow} />
+
             {
                 gameState === GAME_STATE.SETTING ? (
                     <Settings
                         bannerImage={bannerImage}
                         gotoParent={pauseGame}
                         textures={settingsMenuProps.textures}
+                        audioManager={audioManager}
+                        sfx={sfx}
+                        volume={volume}
                     />
                 ) : gameState === GAME_STATE.PAUSE ? (
                     <PauseMenu
@@ -611,11 +682,11 @@ export function Game({
                             current: gameScore,
                             high: gameHighScore
                         }}
+                        sfx={sfx}
                         resume={resumeGame}
                         callSettings={openSettings}
                         mainMenu={leaveGame}
                     />
-
                 ) : gameState === GAME_STATE.OVER ? (
                     <GameOverMenu
                         bannerImage={bannerImage}
@@ -623,10 +694,10 @@ export function Game({
                             current: gameScore,
                             high: gameHighScore
                         }}
+                        sfx={sfx}
                         playAgain={newGame}
                         mainMenu={mainMenu}
                     />
-
                 ) : (
                     <>
                     </>

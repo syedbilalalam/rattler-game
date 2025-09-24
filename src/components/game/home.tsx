@@ -1,49 +1,53 @@
-import { useEffect, useState, type JSX, useRef } from 'react';
-import Typed from 'typed.js';
+import { useEffect, useState, useRef, type JSX } from 'react';
 import '@/assets/home.css';
 import '@/assets/button.css';
+import Typed from 'typed.js';
+import { SfxManager } from '@/app/game/page';
+import { GameButton } from '@/components/game_button';
 
 interface HomeScreenComponentProps {
     startGame: () => void;
     openSettings: () => void;
     bannerImage: HTMLImageElement;
+    homeMusic: HTMLAudioElement;
+    sfx: SfxManager;
 }
 
-function LoginButton(): JSX.Element {
+interface LoginButtonComponentProps {
+    sfx: SfxManager;
+}
+
+function LoginButton({ sfx }: LoginButtonComponentProps): JSX.Element {
 
     const [loginButtonText, setLoginButtonText] = useState('Login');
-    const loginButtonElement = useRef<HTMLButtonElement>(null);
-
-    useEffect(() => {
-
-        if (!loginButtonElement.current) return;
-
-        loginButtonElement.current.onclick = () => {
-            setLoginButtonText('Hi, Test User');
-        }
-
-    }, []);
-
-    useEffect(() => {
-
-        if (!loginButtonElement.current) return;
-
-        loginButtonElement.current.innerText = loginButtonText;
-
-    }, [loginButtonText]);
 
     return (
-        <button className={'game-btn'} ref={loginButtonElement}>Login</button>
+        <GameButton
+            className={'game-btn'}
+            sfx={sfx}
+            onClick={() => {
+                setLoginButtonText('Hi, Test User');
+            }}
+        >
+            {loginButtonText}
+        </GameButton>
     )
 }
 
-export function HomeScreen({ startGame, openSettings, bannerImage }: HomeScreenComponentProps): JSX.Element {
+export function HomeScreen({
+    startGame,
+    openSettings,
+    bannerImage,
+    homeMusic,
+    sfx
+}: HomeScreenComponentProps): JSX.Element {
 
     const [fullScreen, setFullScreenStatus] = useState(false);
+    const [fullScreenBtnText, setFullScreenBtnText] = useState('Full Screen');
     // const [screenResize, triggerResize] = useState(0);
 
     const bannerImageHolder = useRef<HTMLDivElement>(null);
-    const fullScreenButton = useRef<HTMLButtonElement>(null);
+    // const fullScreenButton = useRef<HTMLButtonElement>(null);
     const menuTagLine = useRef<HTMLSpanElement>(null);
     const gameMenu = useRef<HTMLDivElement>(null);
     const pageRenderCount = useRef(0);
@@ -55,6 +59,8 @@ export function HomeScreen({ startGame, openSettings, bannerImage }: HomeScreenC
         ) throw new Error('Invalid HTML');
 
         pageRenderCount.current++;
+
+        homeMusic.play();
 
         bannerImage.classList.add('gameMenuImage');
         bannerImageHolder.current.append(bannerImage);
@@ -80,15 +86,8 @@ export function HomeScreen({ startGame, openSettings, bannerImage }: HomeScreenC
 
     useEffect(() => {
 
-        if (!fullScreenButton.current) throw new Error('Incomplete HTML Element');
-
-        if (fullScreen) fullScreenButton.current.innerText = 'Exit';
-        else fullScreenButton.current.innerText = 'Full Screen'
-
-        fullScreenButton.current.onclick = async () => {
-            if (fullScreen) exitFullScreen();
-            else setToFullScreen();
-        }
+        // Fullscreen management
+        setFullScreenBtnText(fullScreen ? 'Exit' : 'Full Screen');
 
         window.onblur = exitFullScreen;
 
@@ -123,21 +122,34 @@ export function HomeScreen({ startGame, openSettings, bannerImage }: HomeScreenC
                         <span ref={menuTagLine}></span>
                     </div>
                     <div className={'buttonsHolder'}>
-                        <button
+                        <GameButton
                             className={'game-btn'}
                             onClick={startGame}
+                            sfx={sfx}
                         >
                             Start Game
-                        </button>
-                        <button className={'game-btn'}>Leaderboard</button>
-                        <button
+                        </GameButton>
+                        <GameButton className={'game-btn'} sfx={sfx}>Leaderboard</GameButton>
+                        <GameButton
                             className={'game-btn'}
+                            sfx={sfx}
                             onClick={openSettings}
                         >
                             Settings
-                        </button>
-                        {LoginButton()}
-                        <button className={'game-btn'} ref={fullScreenButton}>Full Screen</button>
+                        </GameButton>
+
+                        {LoginButton({ sfx })}
+
+                        <GameButton
+                            className={'game-btn'}
+                            sfx={sfx}
+                            onClick={() => {
+                                if (fullScreen) exitFullScreen();
+                                else setToFullScreen();
+                            }}
+                        >
+                            {fullScreenBtnText}
+                        </GameButton>
                     </div>
                 </div>
             </div>

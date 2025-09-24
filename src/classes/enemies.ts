@@ -1,4 +1,10 @@
-import { isPointObstructed, Obstruction, ObstructionsArray, RattlerSnake, Size } from "@/classes/snake";
+import {
+    isPointObstructed,
+    Obstruction,
+    ObstructionsArray,
+    RattlerSnake,
+    Size
+} from "@/classes/snake";
 
 export interface EnemyObstruction extends Obstruction {
     id: number;
@@ -26,7 +32,7 @@ export class Enemy {
         private snakeObject: RattlerSnake
     ) { }
 
-    public produce(): void {
+    public produce(): number {
         const arrayBuffer = new Uint8Array(9);
         const randomValues = crypto.getRandomValues(arrayBuffer);
         const randomNumberA = randomValues[0] * randomValues[1] * randomValues[2];
@@ -59,8 +65,7 @@ export class Enemy {
                 }) ||
                 this.snakeObject.doesSnakeObstructs(x, y)
             ) {
-                this.produce();
-                return;
+                return this.produce();
             }
         }
 
@@ -76,9 +81,7 @@ export class Enemy {
             height: enemy.size.height
         });
 
-        // console.log('Enemy launched and its position is ');
-        // console.log({ x, y });
-
+        return enemy.value;
     }
 
     public kill(id: number): number {

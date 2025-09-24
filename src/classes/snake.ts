@@ -1,4 +1,5 @@
-import { Enemy, EnemyObstruction } from '@/classes/enemies';
+import { Enemy } from '@/classes/enemies';
+import { OnPenguPopFn, OnScoreUpdateFn } from '@/components/game/game';
 
 export enum HEAD_POSITION {
     UP,
@@ -31,6 +32,12 @@ export type Position = {
 export type Size = {
     width: number;
     height: number;
+}
+
+interface SnakeHeadEvents {
+    gameOver: () => void;
+    penguPop: OnPenguPopFn;
+    scoreUpdate: OnScoreUpdateFn;
 }
 
 export interface ObjectSize {
@@ -567,8 +574,7 @@ abstract class SnakeHead {
         protected ctx: CanvasRenderingContext2D,
         private obstructionArray: ObstructionsArray,
         private snakeTexture: HTMLImageElement,
-        private onGameOverFn: () => void,
-        private scoreUpdaterFn: (score: number) => void
+        private events: SnakeHeadEvents,
     ) {
 
         this.snakeFirstTummy = new SnakeTummy(
@@ -641,13 +647,16 @@ abstract class SnakeHead {
 
                         const value = this.enemyController.kill(obstruction.id)
 
-                        this.scoreUpdaterFn(value);
+                        this.events.scoreUpdate(value);
                         const healthValue = SnakeHead.HEALTH.get(value);
                         if (healthValue)
                             this.increaseHealth(healthValue);
 
                         setTimeout(() => {
-                            this.enemyController?.produce();
+                            if (this.enemyController){
+                                const penguValue = this.enemyController.produce();
+                                this.events.penguPop(penguValue);
+                            }
                         }, 2000);
 
                         break;
@@ -661,7 +670,7 @@ abstract class SnakeHead {
             this.state.x = 0;
             this.state.y = 0;
             if (!this.gameOverRequested) {
-                this.onGameOverFn();
+                this.events.gameOver();
                 this.gameOverRequested = true;
             }
             return false;
@@ -751,10 +760,10 @@ export class RattlerSnake extends SnakeHead {
         ctx: CanvasRenderingContext2D,
         obstructionArray: ObstructionsArray,
         snakeTexture: HTMLImageElement,
-        onGameOverFn: () => void,
+        events: SnakeHeadEvents,
         scoreUpdaterFn: (score: number) => void
     ) {
-        super(ctx, obstructionArray, snakeTexture, onGameOverFn, scoreUpdaterFn);
+        super(ctx, obstructionArray, snakeTexture, events);
         this.snakeLastTummy = this.snakeFirstTummy;
     }
 
