@@ -493,10 +493,10 @@ export default function Page(): JSX.Element {
                 audio.musics.home.current!.currentTime = 0;
             }
 
-            audio.musics.game.current!.pause();
-            audio.musics.pauseMenu.current!.pause();
-
-
+            if (screenType !== SCREEN.GAME){
+                audio.musics.game.current!.pause();
+                audio.musics.pauseMenu.current!.pause();
+            }
 
             // Telling browser to remove this meta data
             if ('mediaSession' in navigator) {

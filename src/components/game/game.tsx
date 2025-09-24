@@ -514,10 +514,7 @@ export function Game({
         gameStatus.current.running = true;
 
         // Start game music
-        setTimeout(()=> {
-
-            music.game.play();
-        }, 1000);
+        music.game.play();
 
         // loading high scores
         const sessionData = localStorage.getItem(RATTLER_DATA_SESSION_NAME);
@@ -617,7 +614,7 @@ export function Game({
     }, [gameState]);
 
     useEffect(() => {
-        
+
         if (windowBlured) {
             music.game.pause();
             music.pauseMenu.pause();
@@ -628,7 +625,7 @@ export function Game({
         else {
             music.pauseMenu.play();
         }
-        
+
     }, [windowBlured]);
 
     useEffect(() => {
