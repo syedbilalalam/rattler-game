@@ -1,0 +1,65 @@
+.welcomeScreenBoard {
+    background-color: black;
+    height: 100vh;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.devWatermark {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    color: #FFD700;
+    z-index: 4;
+    white-space: nowrap;
+}
+.devWatermark , .devWatermark sup{
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px;
+}
+
+.loadingBar {
+    display: flex;
+    width: 100%;
+    max-width: 300px;
+    padding: 20px;
+    margin: auto;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Loading external css */
+.progress-container {
+    width: 100%;
+    max-width: 500px;
+    background-color: #222;
+    border: 2px solid #FFD700;
+    /* Yellow border */
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 15px #FFD700;
+    height: fit-content;
+}
+
+.progress-bar {
+    height: 30px;
+    width: 60%;
+    /* Change this % to adjust progress */
+    background: linear-gradient(90deg, #FFD700, #FFC107);
+    /* border-radius: 20px 0 0 20px; */
+    transition: width 0.4s ease;
+}
+
+.progress-text {
+    text-align: center;
+    color: #FFD700;
+    margin-top: 15px;
+    font-weight: bold;
+}

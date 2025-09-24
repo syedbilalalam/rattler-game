@@ -4,12 +4,15 @@ import '@/assets/scrollbar.css';
 import { Game } from '@/components/game/game';
 import { HomeScreen } from '@/components/game/home';
 import { Settings } from '@/components/game/settings';
+import { LoadingScreen } from '@/components/game/loading';
+import { UserInteractor } from '@/components/game/user_interact';
 
 enum SCREEN {
     HOME,
     SETTING,
     PAUSE,
-    GAME
+    GAME,
+    USER_INTERACT
 }
 
 enum DEFAULT_AUDIO_SETTINGS {
@@ -67,7 +70,8 @@ const SOUND_SESSION_NAME = 'rattlerAudio';
 
 type ProjectMimeTypes =
     'audio/mpeg' |
-    'audio/wav';
+    'audio/wav' |
+    'image/png';
 
 type SfxManagerKey = 'buttonHover' |
     'buttonClicked' |
@@ -75,6 +79,7 @@ type SfxManagerKey = 'buttonHover' |
     'penguPop' |
     'gameOver' |
     'highScore'
+export type CompleteInteraction = () => void;
 export type SfxManager = (keyName: SfxManagerKey) => void;
 export type AudioManager = (type: 'sfx' | 'musics', volume: number) => void;
 
@@ -219,13 +224,21 @@ async function getContentObjectUrl(url: string, mimeType: ProjectMimeTypes): Pro
     return blobUrl;
 }
 
+export type WindowSize = {
+    innerWidth: number;
+    innerHeight: number;
+} | null;
 export default function Page(): JSX.Element {
 
-    const [screenType, updateScreenType] = useState(SCREEN.HOME);
+    const [screenType, updateScreenType] = useState(SCREEN.USER_INTERACT);
     const [gameLoaded, updateGameLoadingStatus] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState(0);
+    const [windowSize, setWindowSize] = useState<WindowSize>(null);
+    const [windowBlured, setWindowBlur] = useState(false);
 
     // For loading things
     const TEXTURES = useRef<GameTextures>(null);
+    const gameLogo = useRef<HTMLImageElement>(null);
     const gameIcons = useRef<GameIcons>(null);
     const bannerImage = useRef<HTMLImageElement>(null);
     const settingsTextures = useRef<SettingsTextures>(null);
@@ -255,6 +268,21 @@ export default function Page(): JSX.Element {
     });
 
     useEffect(() => {
+
+        // Window global events
+        window.onresize = () => {
+            setWindowSize({
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight
+            });
+        }
+        window.onblur = () => {
+            setWindowBlur(true);
+        }
+        window.onfocus = () => {
+            setWindowBlur(false);
+        }
+
         (async () => {
 
             // Loading audios
@@ -267,6 +295,8 @@ export default function Page(): JSX.Element {
             audio.musics.home.current.onload = () => {
                 URL.revokeObjectURL(homeMusicUrl);
             }
+            setLoadingProgress(7);
+
             // Game play music
             const gameMusicUrl = await getContentObjectUrl(
                 '/audio/musics/game.dat',
@@ -277,6 +307,8 @@ export default function Page(): JSX.Element {
             audio.musics.game.current.onload = () => {
                 URL.revokeObjectURL(gameMusicUrl);
             }
+            setLoadingProgress(14);
+
             // Pause menu music
             const pauseMenuMusicUrl = await getContentObjectUrl(
                 '/audio/musics/pause_menu.dat',
@@ -287,6 +319,7 @@ export default function Page(): JSX.Element {
             audio.musics.pauseMenu.current.onload = () => {
                 URL.revokeObjectURL(pauseMenuMusicUrl);
             }
+            setLoadingProgress(20);
 
             // Sfx
             // Button hover
@@ -307,6 +340,7 @@ export default function Page(): JSX.Element {
             audio.sfx.buttonClicked.current.onload = () => {
                 URL.revokeObjectURL(btnClickedSfxUrl);
             }
+            setLoadingProgress(22);
             // Snake eat
             const snakeEatSfxUrl = await getContentObjectUrl(
                 '/audio/sfx/snake_eat.dat',
@@ -316,6 +350,7 @@ export default function Page(): JSX.Element {
             audio.sfx.snakeEat.current.onload = () => {
                 URL.revokeObjectURL(snakeEatSfxUrl);
             }
+            setLoadingProgress(25);
             // Pengu pop
             const penguPopSfxUrl = await getContentObjectUrl(
                 '/audio/sfx/pengu_pop.dat',
@@ -334,6 +369,8 @@ export default function Page(): JSX.Element {
             audio.sfx.gameOver.current.onload = () => {
                 URL.revokeObjectURL(gameOverSfxUrl);
             }
+            setLoadingProgress(27);
+
             // Hight score sfx
             const highScoreSfxUrl = await getContentObjectUrl(
                 '/audio/sfx/high_score.dat',
@@ -344,8 +381,12 @@ export default function Page(): JSX.Element {
                 URL.revokeObjectURL(highScoreSfxUrl);
             }
 
+            setLoadingProgress(30);
+
             // Loading canvas textures
             TEXTURES.current = await loadTextures();
+
+            setLoadingProgress(60);
 
             // Loading banner image
             const imageRawBlob = await (await fetch('/images/menu.dat')).blob();
@@ -396,6 +437,7 @@ export default function Page(): JSX.Element {
                 sfxVolumeBarHead: sfxVolumeBarHeadImage,
                 sfxVolumeBarHoldedHead: sfxVolumeBarHoldedHeadImage
             }
+            setLoadingProgress(85);
 
 
             // Loading pause icon
@@ -411,6 +453,19 @@ export default function Page(): JSX.Element {
                 pause: pauseIcon
             }
 
+            // Loading game logo
+            const gameLogoUrl = await getContentObjectUrl(
+                '/images/logo.dat',
+                'image/png'
+            );
+            gameLogo.current = new Image();
+            gameLogo.current.src = gameLogoUrl;
+            gameLogo.current.onload = () => {
+                URL.revokeObjectURL(gameLogoUrl)
+            }
+
+            setLoadingProgress(95);
+
             const soundSession = localStorage.getItem(SOUND_SESSION_NAME);
             if (soundSession) {
                 try {
@@ -422,15 +477,15 @@ export default function Page(): JSX.Element {
                     localStorage.removeItem(SOUND_SESSION_NAME)
                 }
             }
-
-            updateGameLoadingStatus(true);
+            setLoadingProgress(100);
+            setTimeout(() => {
+                updateGameLoadingStatus(true);
+            }, 1000);
         })();
+
     }, []);
 
     useEffect(() => {
-        // Resetting window events
-        window.onresize = () => { };
-
         if (gameLoaded) {
 
             if (screenType !== SCREEN.HOME && screenType !== SCREEN.SETTING) {
@@ -440,6 +495,13 @@ export default function Page(): JSX.Element {
 
             audio.musics.game.current!.pause();
             audio.musics.pauseMenu.current!.pause();
+
+
+
+            // Telling browser to remove this meta data
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = null;
+            }
         }
     }, [screenType, gameLoaded]);
 
@@ -481,16 +543,24 @@ export default function Page(): JSX.Element {
         audioSessionUpdate();
     }
 
+    const completeInteraction: CompleteInteraction = () => {
+        updateScreenType(SCREEN.HOME);
+    }
+
     return (
         <>
-            {/* Background image */}
             <img id={'backgroundImage'} src={'/images/game_background.png'} alt={'Failed to load game background image'} />
-
-            {/* {HomeScreen({ startGame })} */}
 
             {
                 !gameLoaded ? (
-                    <>Loading...</>
+                    <LoadingScreen progress={loadingProgress} />
+                ) : (screenType === SCREEN.USER_INTERACT) ? (
+
+                    <UserInteractor
+                        gameLogoTexture={gameLogo.current!}
+                        startGame={completeInteraction}
+                    />
+
                 ) : (screenType === SCREEN.HOME) ? (
 
                     <HomeScreen
@@ -499,6 +569,8 @@ export default function Page(): JSX.Element {
                         bannerImage={bannerImage.current!}
                         homeMusic={audio.musics.home.current!}
                         sfx={sfxManager}
+                        windowSize={windowSize}
+                        windowBlured={windowBlured}
                     />
 
                 ) : (screenType === SCREEN.GAME) ? (
@@ -519,6 +591,8 @@ export default function Page(): JSX.Element {
                         gameStatus={gameStatus}
                         icons={gameIcons.current!}
                         mainMenu={gotoHome}
+                        windowSize={windowSize}
+                        windowBlured={windowBlured}
                     />
 
                 ) : (screenType === SCREEN.SETTING) ? (
@@ -529,6 +603,8 @@ export default function Page(): JSX.Element {
                         sfx={sfxManager}
                         audioManager={audioManager}
                         volume={volume.current}
+                        windowSize={windowSize}
+                        windowBlured={windowBlured}
                     />
                 ) : (
                     <></>

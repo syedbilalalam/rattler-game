@@ -12,7 +12,8 @@ import {
     GameTextures,
     SettingsTextures,
     SfxManager,
-    VolumeObject
+    VolumeObject,
+    WindowSize
 } from '@/app/game/page';
 import {
     RattlerSnake,
@@ -62,6 +63,8 @@ interface GameComponentProps {
         running: boolean;
     }>;
     mainMenu: () => void;
+    windowSize: WindowSize;
+    windowBlured: boolean;
 }
 
 class FiredHut {
@@ -468,7 +471,7 @@ class MainGame {
         // Launching first enemy after
         setTimeout(() => {
             const value = this.enemiesController.produce();
-            this.onPenguPopFn(value);
+            this.managePenguLaunch(value);
         }, 3000);
 
         // Initial health of snake
@@ -492,7 +495,9 @@ export function Game({
     TEXTURES,
     icons,
     gameStatus,
-    mainMenu
+    mainMenu,
+    windowSize,
+    windowBlured
 }: GameComponentProps): JSX.Element {
     const [game, setGame] = useState(1);
     const [gameState, setGameState] = useState(GAME_STATE.PLAY);
@@ -606,10 +611,33 @@ export function Game({
             }, timeoutValue);
         }
 
-        // Resetting window events
-        window.onresize = () => { };
-
     }, [gameState]);
+
+    useEffect(() => {
+        
+        if (windowBlured) {
+            music.game.pause();
+            music.pauseMenu.pause();
+        }
+        else if (gameState === GAME_STATE.PLAY) {
+            music.game.play();
+        }
+        else {
+            music.pauseMenu.play();
+        }
+        
+    }, [windowBlured]);
+
+    useEffect(() => {
+
+        if (!windowSize) return;
+
+        if (windowSize.innerWidth < 900)
+            gameWindow.current!.classList.add('potrait');
+        else
+            gameWindow.current!.classList.remove('potrait');
+
+    }, [windowSize]);
 
     const updateHighScore = (score: number) => {
         const rattlerData: RattlerData = {
@@ -663,7 +691,9 @@ export function Game({
                 <div className={'game-box sm'}>SCORE: {gameScore}</div>
             </div>
 
-            <canvas height={900} width={1100} ref={gameWindow} />
+            <div className={'gameWindowHolder'}>
+                <canvas height={900} width={1100} ref={gameWindow} />
+            </div>
 
             {
                 gameState === GAME_STATE.SETTING ? (
@@ -674,6 +704,8 @@ export function Game({
                         audioManager={audioManager}
                         sfx={sfx}
                         volume={volume}
+                        windowSize={windowSize}
+                        windowBlured={windowBlured}
                     />
                 ) : gameState === GAME_STATE.PAUSE ? (
                     <PauseMenu
@@ -686,6 +718,7 @@ export function Game({
                         resume={resumeGame}
                         callSettings={openSettings}
                         mainMenu={leaveGame}
+                        windowSize={windowSize}
                     />
                 ) : gameState === GAME_STATE.OVER ? (
                     <GameOverMenu
@@ -697,6 +730,7 @@ export function Game({
                         sfx={sfx}
                         playAgain={newGame}
                         mainMenu={mainMenu}
+                        windowSize={windowSize}
                     />
                 ) : (
                     <>

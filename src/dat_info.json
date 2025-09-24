@@ -50,5 +50,9 @@
     "/public/icons/pause.dat": {
         "ext": "png",
         "mime": "image/png"
+    },
+    "/public/images/logo.dat": {
+        "ext": "png",
+        "mime": "image/png"
     }
 }

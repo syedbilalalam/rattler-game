@@ -8,7 +8,8 @@ import {
     AudioManager,
     SettingsTextures,
     SfxManager,
-    VolumeObject
+    VolumeObject,
+    WindowSize
 } from '@/app/game/page';
 
 type OnOffButtonText = 'On' | 'Off';
@@ -20,6 +21,8 @@ interface SettingsComponentProps {
     sfx: SfxManager;
     audioManager: AudioManager;
     volume: VolumeObject;
+    windowSize: WindowSize;
+    windowBlured: boolean;
 }
 
 class Slider {
@@ -125,7 +128,9 @@ export function Settings({
     textures,
     sfx,
     audioManager,
-    volume
+    volume,
+    windowSize,
+    windowBlured
 }: SettingsComponentProps): JSX.Element {
 
     const [musicVolume, setVolume] = useState(volume.musics);
@@ -196,17 +201,18 @@ export function Settings({
         });
         if (volume.sfx) setSfxVolume(volume.sfx)
 
-        window.onresize = () => {
-            if (window.innerHeight <= gameMenu.current!.scrollHeight) {
-                gameMenu.current!.classList.remove('centered');
-            }
-            else {
-                gameMenu.current!.classList.add('centered');
-            }
-        }
-
-
     }, []);
+
+    useEffect(() => {
+        if (!windowSize) return;
+
+        if (windowSize.innerHeight <= gameMenu.current!.scrollHeight) {
+            gameMenu.current!.classList.remove('centered');
+        }
+        else {
+            gameMenu.current!.classList.add('centered');
+        }
+    }, [windowSize]);
 
     useEffect(() => {
         if (!music.sliderThumb.current) throw new Error('Invalid HTML');
@@ -254,9 +260,14 @@ export function Settings({
     useEffect(() => {
 
         setFullScreenText(fullScreen ? 'Exit' : 'Full Screen');
-        window.onblur = exitFullScreen;
 
     }, [fullScreen]);
+
+    useEffect(()=> {
+
+        if (windowBlured) exitFullScreen();
+
+    }, [windowBlured]);
 
     const setToFullScreen = async () => {
         try {

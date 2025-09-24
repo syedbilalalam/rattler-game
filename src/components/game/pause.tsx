@@ -3,7 +3,7 @@ import '@/assets/home.css';
 import '@/assets/root.css';
 import '@/assets/settings.css';
 import '@/assets/pause_menu.css';
-import { SfxManager } from '@/app/game/page';
+import { SfxManager, WindowSize } from '@/app/game/page';
 import { GameButton } from '@/components/game_button';
 
 interface PauseMenuComponentProps {
@@ -16,6 +16,7 @@ interface PauseMenuComponentProps {
     resume: () => void;
     callSettings: () => void;
     mainMenu: () => void;
+    windowSize: WindowSize;
 }
 
 interface ScoreAtMenuComponentProps {
@@ -44,7 +45,7 @@ export function ScoreAtMenu({ currentScore, highScore }: ScoreAtMenuComponentPro
     )
 }
 
-export function PauseMenu({ bannerImage, score, sfx, resume, callSettings, mainMenu }: PauseMenuComponentProps): JSX.Element {
+export function PauseMenu({ bannerImage, score, sfx, resume, callSettings, mainMenu, windowSize }: PauseMenuComponentProps): JSX.Element {
 
     const bannerImageHolder = useRef<HTMLDivElement>(null);
     const gameMenu = useRef<HTMLDivElement>(null);
@@ -57,15 +58,18 @@ export function PauseMenu({ bannerImage, score, sfx, resume, callSettings, mainM
 
         bannerImageHolder.current.replaceChildren(bannerImage);
 
-        window.onresize = () => {
-            if (window.innerHeight <= gameMenu.current!.scrollHeight) {
-                gameMenu.current!.classList.remove('centered');
-            }
-            else {
-                gameMenu.current!.classList.add('centered');
-            }
-        }
     }, []);
+
+    useEffect(() => {
+        if (!windowSize) return;
+
+        if (windowSize.innerHeight <= gameMenu.current!.scrollHeight) {
+            gameMenu.current!.classList.remove('centered');
+        }
+        else {
+            gameMenu.current!.classList.add('centered');
+        }
+    }, [windowSize])
 
     return (
         <>
@@ -98,7 +102,7 @@ export function PauseMenu({ bannerImage, score, sfx, resume, callSettings, mainM
                             onClick={callSettings}
                         >Settings
                         </GameButton>
-                        
+
                         <GameButton
                             className={'game-btn sm'}
                             sfx={sfx}

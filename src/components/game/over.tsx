@@ -4,9 +4,9 @@ import '@/assets/home.css';
 import '@/assets/root.css';
 import '@/assets/settings.css';
 import '@/assets/pause_menu.css';
-import { SfxManager } from '@/app/game/page';
-import { ScoreAtMenu } from '@/components/game/pause';
 import { GameButton } from '@/components/game_button';
+import { ScoreAtMenu } from '@/components/game/pause';
+import { SfxManager, WindowSize } from '@/app/game/page';
 
 interface GameOverMenuComponentProps {
     bannerImage: HTMLImageElement;
@@ -17,9 +17,10 @@ interface GameOverMenuComponentProps {
     sfx: SfxManager
     playAgain: () => void;
     mainMenu: () => void;
+    windowSize: WindowSize;
 }
 
-export function GameOverMenu({ bannerImage, score, sfx, playAgain, mainMenu }: GameOverMenuComponentProps): JSX.Element {
+export function GameOverMenu({ bannerImage, score, sfx, playAgain, mainMenu, windowSize }: GameOverMenuComponentProps): JSX.Element {
 
     const gameMenu = useRef<HTMLDivElement>(null);
     const bannerImageHolder = useRef<HTMLDivElement>(null);
@@ -50,15 +51,18 @@ export function GameOverMenu({ bannerImage, score, sfx, playAgain, mainMenu }: G
                 });
             }
 
-        window.onresize = () => {
-            if (window.innerHeight <= gameMenu.current!.scrollHeight) {
-                gameMenu.current!.classList.remove('centered');
-            }
-            else {
-                gameMenu.current!.classList.add('centered');
-            }
-        }
     }, []);
+
+    useEffect(() => {
+        if (!windowSize) return;
+
+        if (windowSize.innerHeight <= gameMenu.current!.scrollHeight) {
+            gameMenu.current!.classList.remove('centered');
+        }
+        else {
+            gameMenu.current!.classList.add('centered');
+        }
+    }, [windowSize]);
 
     return (
         <>

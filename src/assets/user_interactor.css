@@ -1,0 +1,9 @@
+.loadingBar .progress-text {
+    font-size: 23px;
+}
+.imageContianer {
+    height: 150px;
+}
+.imageContianer img {
+    height: 100%;
+}

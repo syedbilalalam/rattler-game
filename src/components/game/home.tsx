@@ -2,8 +2,8 @@ import { useEffect, useState, useRef, type JSX } from 'react';
 import '@/assets/home.css';
 import '@/assets/button.css';
 import Typed from 'typed.js';
-import { SfxManager } from '@/app/game/page';
 import { GameButton } from '@/components/game_button';
+import { SfxManager, WindowSize } from '@/app/game/page';
 
 interface HomeScreenComponentProps {
     startGame: () => void;
@@ -11,6 +11,8 @@ interface HomeScreenComponentProps {
     bannerImage: HTMLImageElement;
     homeMusic: HTMLAudioElement;
     sfx: SfxManager;
+    windowSize: WindowSize;
+    windowBlured: boolean;
 }
 
 interface LoginButtonComponentProps {
@@ -39,7 +41,9 @@ export function HomeScreen({
     openSettings,
     bannerImage,
     homeMusic,
-    sfx
+    sfx,
+    windowSize,
+    windowBlured
 }: HomeScreenComponentProps): JSX.Element {
 
     const [fullScreen, setFullScreenStatus] = useState(false);
@@ -74,24 +78,39 @@ export function HomeScreen({
                 typeSpeed: 50
             });
 
-        window.onresize = () => {
-            if (window.innerHeight <= gameMenu.current!.scrollHeight) {
-                gameMenu.current!.classList.remove('centered');
-            }
-            else {
-                gameMenu.current!.classList.add('centered');
-            }
-        }
     }, []);
+
+    useEffect(() => {
+
+        if (!windowSize) return;
+
+        if (windowSize.innerHeight <= gameMenu.current!.scrollHeight) {
+            gameMenu.current!.classList.remove('centered');
+        }
+        else {
+            gameMenu.current!.classList.add('centered');
+        }
+
+    }, [windowSize])
 
     useEffect(() => {
 
         // Fullscreen management
         setFullScreenBtnText(fullScreen ? 'Exit' : 'Full Screen');
 
-        window.onblur = exitFullScreen;
-
     }, [fullScreen]);
+
+    useEffect(() => {
+
+        if (windowBlured) {
+            exitFullScreen()
+            homeMusic.pause();
+        }
+        else {
+            homeMusic.play();
+        }
+        
+    }, [windowBlured]);
 
     const setToFullScreen = async () => {
         try {

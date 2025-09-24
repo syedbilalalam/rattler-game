@@ -4,17 +4,8 @@
     font-family: Orbitron, monospace;
 }
 #gameWindow {
-    /* height: 80vh; */
-    /* width: 90vw; */
-    border: 3px solid black;
     display: block;
-    margin: 0 auto;
     border-radius: 10px;
-    /* background-image: url('/images/grass.png'); */
-    /* background-size: 130px; */
-    /* background-color: lightgreen; */
-    /* padding: 5px; */
-    position: relative;
 }
 .firstLayerObject {
     margin-right:3px;
@@ -22,12 +13,22 @@
     position: absolute;
 }
 
-canvas {
-    border: 3px solid black;
-    /* margin: 100px; */
+.gameWindowHolder {
     height: 100vh;
-    margin: 0 auto;
-    display: block;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+canvas {
+    border: 3px solid #ba9812;
+    height: 100vh;
+}
+
+canvas.potrait {
+    height: auto !important;
+    width: 100vw
 }
 
 #backgroundImage {
@@ -44,7 +45,6 @@ canvas {
     top: 2px;
     left: 2px;
     width: 300px;
-    /* background-color: red; */
     z-index: 3;
     padding: 5px;
     display: flex;
@@ -57,8 +57,6 @@ canvas {
     cursor: pointer;
     background-color: var(--main-light-color);
     border-radius: 10px;
-    border-radius: 3px solid pink;
-    /* border-color: var(--main-extra-light-color); */
 }
 .gameBar .game-box {
     width: fit-content;
