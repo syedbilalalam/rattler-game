@@ -189,15 +189,15 @@ export function Settings({
         );
         sfxSlider.current.onUpdate((value) => {
             setSfxVolume(value);
-
-            // Test sound for users
-            sfx('snakeEat');
         });
         sfxSlider.current.onFocus(() => {
             updateSfxSliderFocusStatus(true);
         });
         sfxSlider.current.onBlur(() => {
             updateSfxSliderFocusStatus(false);
+            
+            // Test sound for users
+            sfx('snakeEat');
         });
         if (volume.sfx) setSfxVolume(volume.sfx)
 
