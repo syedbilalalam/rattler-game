@@ -507,6 +507,10 @@ export function Game({
     };
 
     useEffect(() => {
+        if (!gameWindow.current) throw new Error('Invalid HTML');
+    }, []);
+
+    useEffect(() => {
         if (gameStatus.current.running) return;
         if (!gameWindow.current || !pauseBtn.current) throw new Error('Incomplete HTML');
         gameStatus.current.running = true;
@@ -569,7 +573,7 @@ export function Game({
 
                 // Setting device events
                 // Listening for swipe gestures
-                const userSwipe = new UserSwipe();
+                const userSwipe = new UserSwipe(gameWindow.current!);
 
                 userSwipe.onSwipe((direction) => {
 

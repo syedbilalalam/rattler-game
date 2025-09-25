@@ -16,30 +16,30 @@ export class UserSwipe {
     private tracking = false;
     private onSwipeFn = (gesture: SWIPE): void => { };
 
-    constructor() {
+    constructor(htmlElement: HTMLElement) {
 
         // TOUCH events (mobile) — passive:false so we can call preventDefault()
-        window.addEventListener('touchstart', e => {
+        htmlElement.addEventListener('touchstart', e => {
             if (!e.touches || e.touches.length === 0) return;
             const t = e.touches[0];
             this.onStart(t.clientX, t.clientY);
         }, { passive: false });
 
-        window.addEventListener('touchmove', e => {
+        htmlElement.addEventListener('touchmove', e => {
             // if the user has multiple touches, ignore
             if (!e.touches || e.touches.length === 0) return;
             const t = e.touches[0];
             this.onMove(t.clientX, t.clientY, e);
         }, { passive: false });
 
-        window.addEventListener('touchend', e => {
+        htmlElement.addEventListener('touchend', e => {
             // touchend uses changedTouches
             if (!e.changedTouches || e.changedTouches.length === 0) return;
             const t = e.changedTouches[0];
             this.onEnd(t.clientX, t.clientY);
         }, { passive: false });
 
-        window.addEventListener('touchcancel', () => {
+        htmlElement.addEventListener('touchcancel', () => {
 
             this.tracking = false;
             this.setDirection(SWIPE.NO_DIRECTION);
@@ -48,7 +48,7 @@ export class UserSwipe {
 
         // POINTER / MOUSE fallback for desktop
         let pointerDown = false;
-        window.addEventListener('pointerdown', e => {
+        htmlElement.addEventListener('pointerdown', e => {
 
             if (e.isPrimary === false) return;
             pointerDown = true;
@@ -56,14 +56,14 @@ export class UserSwipe {
 
         }, { passive: false });
 
-        window.addEventListener('pointermove', e => {
+        htmlElement.addEventListener('pointermove', e => {
 
             if (!pointerDown) return;
             this.onMove(e.clientX, e.clientY, e);
 
         }, { passive: false });
 
-        window.addEventListener('pointerup', e => {
+        htmlElement.addEventListener('pointerup', e => {
 
             if (!pointerDown) return;
             pointerDown = false;
@@ -71,7 +71,7 @@ export class UserSwipe {
 
         }, { passive: false });
 
-        window.addEventListener('pointercancel', () => {
+        htmlElement.addEventListener('pointercancel', () => {
 
             pointerDown = false;
             this.tracking = false;
