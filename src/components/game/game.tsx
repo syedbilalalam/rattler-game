@@ -699,7 +699,7 @@ export function Game({
 
         if (!windowSize) return;
 
-        if (windowSize.innerWidth < 900)
+        if (windowSize.innerWidth - 150 < windowSize.innerHeight)
             gameWindow.current!.classList.add('potrait');
         else
             gameWindow.current!.classList.remove('potrait');
