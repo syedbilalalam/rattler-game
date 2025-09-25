@@ -47,7 +47,6 @@ enum SNAKE_DIRECTION {
 type FirstLayerObjectMapYComponent = Map<number, FiredHut | TreeObject>;
 type FirstLayerObjectMap = Map<number, FirstLayerObjectMapYComponent>;
 
-
 interface RattlerData {
     highScore: number;
 }
@@ -503,6 +502,9 @@ export function Game({
     const gameWindow = useRef<HTMLCanvasElement>(null);
     const gameController = useRef<MainGame>(null);
     const pauseBtn = useRef<HTMLDivElement>(null);
+    const timeout = {
+        pauseMenuMusic: useRef<number>(null)
+    };
 
     useEffect(() => {
         if (gameStatus.current.running) return;
@@ -572,17 +574,17 @@ export function Game({
                 userSwipe.onSwipe((direction) => {
 
                     if (!gameController.current) return;
-                    
+
                     switch (direction) {
 
                         case SWIPE.UP:
                             gameController.current.setDirection(SNAKE_DIRECTION.UP);
                             break;
-                            
+
                         case SWIPE.DOWN:
                             gameController.current.setDirection(SNAKE_DIRECTION.DOWN);
                             break;
-                            
+
                         case SWIPE.RIGHT:
                             gameController.current.setDirection(SNAKE_DIRECTION.RIGHT);
                             break;
@@ -638,6 +640,8 @@ export function Game({
     useEffect(() => {
         if (!gameWindow.current) throw new Error('Invalid HTML');
 
+        if (timeout.pauseMenuMusic.current) clearTimeout(timeout.pauseMenuMusic.current);
+
         if (gameState !== GAME_STATE.PLAY) {
             gameWindow.current.style.filter = 'blur(9px)';
             music.game.pause();
@@ -665,9 +669,9 @@ export function Game({
                 sfx('gameOver');
             }
 
-            setTimeout(() => {
+            timeout.pauseMenuMusic.current = setTimeout(() => {
                 music.pauseMenu.play();
-            }, timeoutValue);
+            }, timeoutValue) as unknown as number;
         }
 
     }, [gameState]);
