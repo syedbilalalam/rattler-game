@@ -1,11 +1,12 @@
 import type { JSX, RefObject } from "react";
-import '@/assets/style.css';
 import { useEffect, useState, useRef } from 'react';
+import '@/assets/style.css';
 import { PauseMenu } from '@/components/game/pause';
 import { Enemy, EnemyInfo } from "@/classes/enemies";
 import { Settings } from '@/components/game/settings';
 import { GameOverMenu } from '@/components/game/over';
 import { GameButton } from "@/components/game_button";
+import { SWIPE, UserSwipe } from "@/components/swipe_detect";
 import {
     AudioManager,
     GameIcons,
@@ -35,6 +36,12 @@ enum GAME_STATE {
     PAUSE,
     OVER,
     SETTING
+}
+enum SNAKE_DIRECTION {
+    UP,
+    DOWN,
+    RIGHT,
+    LEFT
 }
 
 type FirstLayerObjectMapYComponent = Map<number, FiredHut | TreeObject>;
@@ -433,40 +440,29 @@ class MainGame {
         return this.scoreValue
     }
 
-    public start(): void {
+    public setDirection(direction: SNAKE_DIRECTION) {
 
-        // Starting to listen keyboard events
-        window.onkeydown = (e) => {
+        switch (direction) {
 
-            switch (e.key.toLowerCase()) {
+            case SNAKE_DIRECTION.UP:
+                this.snakeObject.rotate(HEAD_POSITION.UP);
+                break;
 
-                case 'w':
-                case 'arrowup':
-                    this.snakeObject.rotate(HEAD_POSITION.UP);
-                    break;
+            case SNAKE_DIRECTION.DOWN:
+                this.snakeObject.rotate(HEAD_POSITION.DOWN);
+                break;
 
-                case 's':
-                case 'arrowdown':
-                    this.snakeObject.rotate(HEAD_POSITION.DOWN);
-                    break;
+            case SNAKE_DIRECTION.RIGHT:
+                this.snakeObject.rotate(HEAD_POSITION.RIGHT);
+                break;
 
-                case 'd':
-                case 'arrowright':
-                    this.snakeObject.rotate(HEAD_POSITION.RIGHT);
-                    break;
+            case SNAKE_DIRECTION.LEFT:
+                this.snakeObject.rotate(HEAD_POSITION.LEFT);
+                break;
 
-                case 'a':
-                case 'arrowleft':
-                    this.snakeObject.rotate(HEAD_POSITION.LEFT);
-                    break;
-
-                case 'p':
-                case 'escape':
-                    if (this.paused) this.resume();
-                    else this.pause();
-                    break;
-            }
         }
+    }
+    public start(): void {
 
         // Launching first enemy after
         setTimeout(() => {
@@ -568,6 +564,69 @@ export function Game({
                 gameController.current.onPenguPop((penguValue) => {
                     sfx('penguPop');
                 });
+
+                // Setting device events
+                // Listening for swipe gestures
+                const userSwipe = new UserSwipe();
+
+                userSwipe.onSwipe((direction) => {
+
+                    if (!gameController.current) return;
+                    
+                    switch (direction) {
+
+                        case SWIPE.UP:
+                            gameController.current.setDirection(SNAKE_DIRECTION.UP);
+                            break;
+                            
+                        case SWIPE.DOWN:
+                            gameController.current.setDirection(SNAKE_DIRECTION.DOWN);
+                            break;
+                            
+                        case SWIPE.RIGHT:
+                            gameController.current.setDirection(SNAKE_DIRECTION.RIGHT);
+                            break;
+
+                        case SWIPE.LEFT:
+                            gameController.current.setDirection(SNAKE_DIRECTION.LEFT);
+                            break;
+                    }
+                });
+                // Starting to listen keyboard events
+                window.onkeydown = (e) => {
+                    if (!gameController.current) return;
+
+                    switch (e.key.toLowerCase()) {
+
+                        case 'w':
+                        case 'arrowup':
+                            gameController.current.setDirection(SNAKE_DIRECTION.UP);
+                            break;
+
+                        case 's':
+                        case 'arrowdown':
+                            gameController.current.setDirection(SNAKE_DIRECTION.DOWN);
+                            break;
+
+                        case 'd':
+                        case 'arrowright':
+                            gameController.current.setDirection(SNAKE_DIRECTION.RIGHT);
+                            break;
+
+                        case 'a':
+                        case 'arrowleft':
+                            gameController.current.setDirection(SNAKE_DIRECTION.LEFT);
+                            break;
+
+                        case 'p':
+                        case 'escape':
+                            if (gameState === GAME_STATE.PLAY)
+                                gameController.current.pause();
+                            else if (gameState === GAME_STATE.PAUSE) {
+                                gameController.current.resume();
+                            }
+                    }
+                }
             }
             catch (err) {
                 launchError(err);

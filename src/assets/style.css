@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap');
 * {
     font-family: Orbitron, monospace;
+    user-select: none;
 }
 #gameWindow {
     display: block;
