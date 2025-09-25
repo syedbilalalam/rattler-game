@@ -282,6 +282,12 @@ export default function Page(): JSX.Element {
         window.onfocus = () => {
             setWindowBlur(false);
         }
+        
+        // Setting initial window size
+        setWindowSize({
+            innerWidth: window.innerWidth,
+            innerHeight: window.innerHeight
+        });
 
         (async () => {
 
@@ -493,7 +499,7 @@ export default function Page(): JSX.Element {
                 audio.musics.home.current!.currentTime = 0;
             }
 
-            if (screenType !== SCREEN.GAME){
+            if (screenType !== SCREEN.GAME) {
                 audio.musics.game.current!.pause();
                 audio.musics.pauseMenu.current!.pause();
             }
