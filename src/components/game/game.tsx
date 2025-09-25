@@ -500,6 +500,7 @@ export function Game({
     const [gameHighScore, setGameHighScore] = useState(0);
 
     const gameWindow = useRef<HTMLCanvasElement>(null);
+    const gameWindowHolder = useRef<HTMLDivElement>(null);
     const gameController = useRef<MainGame>(null);
     const pauseBtn = useRef<HTMLDivElement>(null);
     const timeout = {
@@ -507,7 +508,7 @@ export function Game({
     };
 
     useEffect(() => {
-        if (!gameWindow.current) throw new Error('Invalid HTML');
+        if (!gameWindow.current || !gameWindowHolder.current) throw new Error('Invalid HTML');
     }, []);
 
     useEffect(() => {
@@ -573,7 +574,7 @@ export function Game({
 
                 // Setting device events
                 // Listening for swipe gestures
-                const userSwipe = new UserSwipe(gameWindow.current!);
+                const userSwipe = new UserSwipe(gameWindowHolder.current!);
 
                 userSwipe.onSwipe((direction) => {
 
@@ -758,7 +759,7 @@ export function Game({
                 <div className={'game-box sm'}>SCORE: {gameScore}</div>
             </div>
 
-            <div className={'gameWindowHolder'}>
+            <div className={'gameWindowHolder'} ref={gameWindowHolder}>
                 <canvas height={900} width={1100} ref={gameWindow} />
             </div>
 
