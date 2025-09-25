@@ -18,47 +18,72 @@ export class UserSwipe {
 
     constructor() {
 
-        // touch events
+        // TOUCH events (mobile) — passive:false so we can call preventDefault()
         window.addEventListener('touchstart', e => {
+            if (!e.touches || e.touches.length === 0) return;
             const t = e.touches[0];
             this.onStart(t.clientX, t.clientY);
-        }, { passive: true });
+        }, { passive: false });
+
+        window.addEventListener('touchmove', e => {
+            // if the user has multiple touches, ignore
+            if (!e.touches || e.touches.length === 0) return;
+            const t = e.touches[0];
+            this.onMove(t.clientX, t.clientY, e);
+        }, { passive: false });
 
         window.addEventListener('touchend', e => {
-            // touchend has no touches; use changedTouches
+            // touchend uses changedTouches
+            if (!e.changedTouches || e.changedTouches.length === 0) return;
             const t = e.changedTouches[0];
-            if (!t) return;
             this.onEnd(t.clientX, t.clientY);
-        });
+        }, { passive: false });
 
-        // pointer/mouse fallback (so desktop testers can drag)
+        window.addEventListener('touchcancel', () => {
+
+            this.tracking = false;
+            this.setDirection(SWIPE.NO_DIRECTION);
+
+        }, { passive: false });
+
+        // POINTER / MOUSE fallback for desktop
+        let pointerDown = false;
         window.addEventListener('pointerdown', e => {
-            // only respond to primary button
+
             if (e.isPrimary === false) return;
+            pointerDown = true;
             this.onStart(e.clientX, e.clientY);
-        });
+
+        }, { passive: false });
+
+        window.addEventListener('pointermove', e => {
+
+            if (!pointerDown) return;
+            this.onMove(e.clientX, e.clientY, e);
+
+        }, { passive: false });
 
         window.addEventListener('pointerup', e => {
+
+            if (!pointerDown) return;
+            pointerDown = false;
             this.onEnd(e.clientX, e.clientY);
-        });
 
-        // optional: cancel tracking on leave / cancel events
-        window.addEventListener('touchcancel', () => {
-            this.tracking = false;
-            this.setDirection(SWIPE.NO_DIRECTION);
-        }
-        );
+        }, { passive: false });
+
         window.addEventListener('pointercancel', () => {
+
+            pointerDown = false;
             this.tracking = false;
             this.setDirection(SWIPE.NO_DIRECTION);
-        });
 
-        // show initial
+        }, { passive: false });
+
+        // initial state
         this.setDirection(SWIPE.NO_DIRECTION);
-
     }
 
-    public onSwipe (fn: (gesture: SWIPE) => void): void {
+    public onSwipe(fn: (gesture: SWIPE) => void): void {
         this.onSwipeFn = fn;
     }
 
@@ -73,9 +98,28 @@ export class UserSwipe {
         this.tracking = true;
     }
 
+    private onMove(x: number, y: number, e: Event): void {
+        if (!this.tracking || !this.startX || !this.startY) return;
+
+        const dx = x - this.startX;
+        const dy = y - this.startY;
+
+        // prevent default behavior (scroll / pull-to-refresh) while tracking
+        // listener must be passive:false for this to work (we set that below)
+        if (e && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
+
+    }
+
     private onEnd(x: number, y: number): void {
-        if (!this.startTime) return;
-        if (!this.tracking || this.startX === null || this.startY === null) return;
+        if (
+            !this.tracking ||
+            this.startX === null ||
+            this.startY === null ||
+            !this.startTime
+        ) return;
+
         const dx = x - this.startX;
         const dy = y - this.startY;
         const adx = Math.abs(dx);
