@@ -1,4 +1,4 @@
-#menuHolder{
+.menuHolder {
     position: fixed;
     height: 100vh;
     width: max-content;
@@ -11,14 +11,11 @@
 
 #gameMenu {
     max-width: 436px;
-    /* width: 98%; */
     background-color: #00000030;
     border-radius: 20px;
-    /* margin: 20px auto; */
-    overflow:hidden;
-
-    /* margin-top: 100px; */
+    overflow: hidden;
 }
+
 #gameMenu.centered {
     position: relative;
     top: 50%;
@@ -49,4 +46,15 @@
     text-align: center;
     font-size: 20px;
     padding: 20px 2px;
+}
+
+/* Home screen specific */
+.smallMenu button, .smallMenu .game-box {
+    font-size: 15px !important;
+    font-weight: 100 !important;
+    padding: 8px 6px !important;
+}
+
+.smallMenu.menuHolder {
+    width: 100vw !important;
 }

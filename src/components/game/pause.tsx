@@ -3,8 +3,9 @@ import '@/assets/home.css';
 import '@/assets/root.css';
 import '@/assets/settings.css';
 import '@/assets/pause_menu.css';
-import { SfxManager, WindowSize } from '@/app/game/page';
 import { GameButton } from '@/components/game_button';
+import { SfxManager, WindowSize } from '@/app/game/page';
+import { SMALL_MENU_MAX_WIDTH } from '@/components/game/home';
 
 interface PauseMenuComponentProps {
     bannerImage: HTMLImageElement;
@@ -47,11 +48,13 @@ export function ScoreAtMenu({ currentScore, highScore }: ScoreAtMenuComponentPro
 
 export function PauseMenu({ bannerImage, score, sfx, resume, callSettings, mainMenu, windowSize }: PauseMenuComponentProps): JSX.Element {
 
+    const menuHolder = useRef<HTMLDivElement>(null);
     const bannerImageHolder = useRef<HTMLDivElement>(null);
     const gameMenu = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (
+            !menuHolder.current ||
             !bannerImageHolder.current ||
             !gameMenu.current
         ) throw new Error('Invalid HTML');
@@ -69,11 +72,18 @@ export function PauseMenu({ bannerImage, score, sfx, resume, callSettings, mainM
         else {
             gameMenu.current!.classList.add('centered');
         }
+
+        if (windowSize.innerWidth < SMALL_MENU_MAX_WIDTH) {
+            menuHolder.current!.classList.add('smallMenu');
+        }
+        else {
+            menuHolder.current!.classList.remove('smallMenu');
+        }
     }, [windowSize])
 
     return (
         <>
-            <div id={'menuHolder'}>
+            <div className={'menuHolder'} ref={menuHolder}>
                 <div id={'gameMenu'} className={'centered'} ref={gameMenu}>
                     <div className={'bannerImageHolder'} ref={bannerImageHolder}></div>
 

@@ -19,6 +19,8 @@ interface LoginButtonComponentProps {
     sfx: SfxManager;
 }
 
+export const SMALL_MENU_MAX_WIDTH = 432;
+
 function LoginButton({ sfx }: LoginButtonComponentProps): JSX.Element {
 
     const [loginButtonText, setLoginButtonText] = useState('Login');
@@ -50,6 +52,7 @@ export function HomeScreen({
     const [fullScreenBtnText, setFullScreenBtnText] = useState('Full Screen');
     // const [screenResize, triggerResize] = useState(0);
 
+    const menuHolder = useRef<HTMLDivElement>(null);
     const bannerImageHolder = useRef<HTMLDivElement>(null);
     // const fullScreenButton = useRef<HTMLButtonElement>(null);
     const menuTagLine = useRef<HTMLSpanElement>(null);
@@ -59,7 +62,8 @@ export function HomeScreen({
     useEffect(() => {
         if (
             !bannerImageHolder.current ||
-            !gameMenu.current
+            !gameMenu.current ||
+            !menuHolder.current
         ) throw new Error('Invalid HTML');
 
         pageRenderCount.current++;
@@ -90,6 +94,14 @@ export function HomeScreen({
         else {
             gameMenu.current!.classList.add('centered');
         }
+
+        if (windowSize.innerWidth < SMALL_MENU_MAX_WIDTH) {
+            menuHolder.current!.classList.add('smallMenu');
+        }
+        else {
+            menuHolder.current!.classList.remove('smallMenu');
+        }
+        
 
     }, [windowSize])
 
@@ -134,7 +146,7 @@ export function HomeScreen({
 
     return (
         <>
-            <div id={'menuHolder'}>
+            <div className={'menuHolder'} ref={menuHolder}>
                 <div id={'gameMenu'} className={'centered'} ref={gameMenu}>
                     <div className={'bannerImageHolder'} ref={bannerImageHolder}></div>
                     <div className={'menuTagLine'}>

@@ -4,6 +4,7 @@ import '@/assets/root.css';
 import '@/assets/slider.css';
 import '@/assets/settings.css';
 import { GameButton } from '@/components/game_button';
+import { SMALL_MENU_MAX_WIDTH } from '@/components/game/home';
 import {
     AudioManager,
     SettingsTextures,
@@ -143,6 +144,7 @@ export function Settings({
     const [sfxToggleText, setSfxToggleText] = useState<OnOffButtonText>('On');
 
     const gameMenu = useRef<HTMLDivElement>(null);
+    const menuHolder = useRef<HTMLDivElement>(null);
     const bannerImageHolder = useRef<HTMLDivElement>(null);
     const musicSlider = useRef<Slider>(null);
     const sfxSlider = useRef<Slider>(null);
@@ -160,6 +162,7 @@ export function Settings({
     useEffect(() => {
         if (
             !bannerImageHolder.current ||
+            !menuHolder.current ||
             !music.sliderFill.current || !music.sliderThumb.current || !music.slider.current ||
             !sfxAdjustment.sliderFill.current || !sfxAdjustment.sliderThumb.current || !sfxAdjustment.slider.current
         ) throw new Error('Invalid HTML');
@@ -195,7 +198,7 @@ export function Settings({
         });
         sfxSlider.current.onBlur(() => {
             updateSfxSliderFocusStatus(false);
-            
+
             // Test sound for users
             sfx('snakeEat');
         });
@@ -211,6 +214,12 @@ export function Settings({
         }
         else {
             gameMenu.current!.classList.add('centered');
+        }
+        if (windowSize.innerWidth < SMALL_MENU_MAX_WIDTH) {
+            menuHolder.current!.classList.add('smallMenu');
+        }
+        else {
+            menuHolder.current!.classList.remove('smallMenu');
         }
     }, [windowSize]);
 
@@ -263,7 +272,7 @@ export function Settings({
 
     }, [fullScreen]);
 
-    useEffect(()=> {
+    useEffect(() => {
 
         if (windowBlured) exitFullScreen();
 
@@ -291,7 +300,7 @@ export function Settings({
 
     return (
         <>
-            <div id={'menuHolder'}>
+            <div className={'menuHolder'} ref={menuHolder}>
                 <div id={'gameMenu'} className={'centered'} ref={gameMenu}>
                     <div className={'bannerImageHolder'} ref={bannerImageHolder}></div>
 
