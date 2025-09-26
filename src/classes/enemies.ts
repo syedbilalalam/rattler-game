@@ -1,5 +1,5 @@
+import { isPlaneObstructed } from "@/components/intersection";
 import {
-    isPointObstructed,
     Obstruction,
     ObstructionsArray,
     RattlerSnake,
@@ -46,29 +46,24 @@ export class Enemy {
         const y = randomNumberB % windowHeight;
         const enemyIndex = randomNumberC % this.enemiesInfo.length;
         const enemy = this.enemiesInfo[enemyIndex];
+        const enemyPlane: Obstruction = {
+            ...enemy.size,
+            x, y
+        }
 
         for (const obstructions of this.obstructionsSet) {
 
             if (
-                isPointObstructed(obstructions, { x, y }) ||
-                isPointObstructed(obstructions, {
-                    x: x + enemy.size.width,
-                    y: y + enemy.size.height
-                }) ||
-                isPointObstructed(obstructions, {
-                    x: x + enemy.size.width,
-                    y
-                }) ||
-                isPointObstructed(obstructions, {
-                    x,
-                    y: y + enemy.size.height
-                }) ||
-                this.snakeObject.doesSnakeObstructs(x, y)
+                true &&(
+
+                    (isPlaneObstructed(enemyPlane, obstructions) !== null) ||
+                    this.snakeObject.doesSnakeObstructs(enemyPlane)
+                )
             ) {
                 return this.produce();
             }
         }
-
+        
         // Now enemy location is decided successfully
 
         const id = this.assignId;

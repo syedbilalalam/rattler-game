@@ -1,6 +1,5 @@
 import type { JSX, RefObject } from "react";
 import { useEffect, useState, useRef } from 'react';
-import '@/assets/style.css';
 import { PauseMenu } from '@/components/game/pause';
 import { Enemy, EnemyInfo } from "@/classes/enemies";
 import { Settings } from '@/components/game/settings';
@@ -29,6 +28,8 @@ import {
     MAP_2D
 } from '@/maps/first_layer';
 
+// Css files
+import '@/assets/style.css';
 
 const RATTLER_DATA_SESSION_NAME = 'rattlerData';
 enum GAME_STATE {
@@ -470,7 +471,7 @@ class MainGame {
         }, 3000);
 
         // Initial health of snake
-        this.snakeObject.increaseHealth(3);
+        this.snakeObject.increaseHealth(3, true);
 
         // Starting the game loop
         this.gameLoop();
