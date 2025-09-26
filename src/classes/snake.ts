@@ -313,7 +313,7 @@ class SnakeTummy {
                 - this.halfTummySize - 1,
                 this.SNAKE_TUMMY_SIZES.STRAIGHT,
                 this.size.height + 2
-            )
+            );
         }
         else if (
             (
@@ -341,7 +341,7 @@ class SnakeTummy {
                 - this.halfTummySize + SnakeTummy.STROKE,
                 this.size.width + 2,
                 this.SNAKE_TUMMY_SIZES.STRAIGHT
-            )
+            );
         }
         else if (
             (
@@ -369,7 +369,7 @@ class SnakeTummy {
                 - this.halfTummySize + SnakeTummy.STROKE,
                 this.SNAKE_TUMMY_SIZES.TURN + 1,
                 this.SNAKE_TUMMY_SIZES.TURN + 1
-            )
+            );
         }
         else if (
             (
@@ -400,14 +400,14 @@ class SnakeTummy {
                     - this.halfTummySize + SnakeTummy.STROKE,
                     this.SNAKE_TUMMY_SIZES.TURN,
                     this.SNAKE_TUMMY_SIZES.TURN + 1
-                )
+                );
             else
                 this.ctx.rect(
                     - this.halfTummySize - SnakeTummy.STROKE,
                     - this.halfTummySize + SnakeTummy.STROKE,
                     this.SNAKE_TUMMY_SIZES.TURN + 1,
                     this.SNAKE_TUMMY_SIZES.TURN
-                )
+                );
         }
         else if (
             (
@@ -438,14 +438,14 @@ class SnakeTummy {
                     - this.halfTummySize - SnakeTummy.STROKE,
                     this.SNAKE_TUMMY_SIZES.TURN + 1,
                     this.SNAKE_TUMMY_SIZES.TURN
-                )
+                );
             else
                 this.ctx.rect(
                     - this.halfTummySize + SnakeTummy.STROKE,
                     - this.halfTummySize - SnakeTummy.STROKE,
                     this.SNAKE_TUMMY_SIZES.TURN,
                     this.SNAKE_TUMMY_SIZES.TURN + 1
-                )
+                );
 
         }
         else if (
@@ -477,14 +477,14 @@ class SnakeTummy {
                     - this.halfTummySize - SnakeTummy.STROKE,
                     this.SNAKE_TUMMY_SIZES.TURN + 1,
                     this.SNAKE_TUMMY_SIZES.TURN + 1
-                )
+                );
             else
                 this.ctx.rect(
                     - this.halfTummySize - SnakeTummy.STROKE,
                     - this.halfTummySize - SnakeTummy.STROKE,
                     this.SNAKE_TUMMY_SIZES.TURN + 1,
                     this.SNAKE_TUMMY_SIZES.TURN + 1
-                )
+                );
 
         }
         else if (
@@ -497,7 +497,7 @@ class SnakeTummy {
                 - this.halfTummySize - SnakeTummy.STROKE + 1,
                 this.SNAKE_TUMMY_SIZES.STRAIGHT,
                 this.SNAKE_TUMMY_SIZES.TURN
-            )
+            );
         }
         else if (
             this.state.headPosition === HEAD_POSITION.DOWN &&
@@ -509,7 +509,7 @@ class SnakeTummy {
                 - this.halfTummySize + SnakeTummy.STROKE,
                 this.SNAKE_TUMMY_SIZES.STRAIGHT,
                 this.SNAKE_TUMMY_SIZES.TURN
-            )
+            );
         }
         else if (
             this.state.headPosition === HEAD_POSITION.RIGHT &&
@@ -521,7 +521,7 @@ class SnakeTummy {
                 - this.halfTummySize,
                 this.SNAKE_TUMMY_SIZES.TURN,
                 this.SNAKE_TUMMY_SIZES.STRAIGHT
-            )
+            );
         }
         else if (
             this.state.headPosition === HEAD_POSITION.LEFT &&
@@ -533,7 +533,7 @@ class SnakeTummy {
                 - this.halfTummySize,
                 this.SNAKE_TUMMY_SIZES.TURN,
                 this.SNAKE_TUMMY_SIZES.STRAIGHT
-            )
+            );
         }
 
         this.ctx.fill();
@@ -582,8 +582,7 @@ abstract class SnakeHead {
             HEAD_POSITION.UP,
             TAIL_POSITION.DOWN,
             {
-                x: 100,
-                y: 100
+                ...this.position
             },
             SnakeHead.TUMMY_SIZE,
             1
