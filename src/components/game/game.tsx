@@ -643,16 +643,15 @@ export function Game({
     }, [game]);
 
     useEffect(() => {
-        if (!gameWindow.current) throw new Error('Invalid HTML');
 
         if (timeout.pauseMenuMusic.current) clearTimeout(timeout.pauseMenuMusic.current);
 
         if (gameState !== GAME_STATE.PLAY) {
-            gameWindow.current.style.filter = 'blur(9px)';
+            gameWindow.current!.style.filter = 'blur(9px)';
             music.game.pause();
         }
         else {
-            gameWindow.current.style.filter = 'none';
+            gameWindow.current!.style.filter = 'none';
             music.game.play();
             music.pauseMenu.pause();
         }
