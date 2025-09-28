@@ -797,7 +797,11 @@ export function Game({
                         }}
                         sfx={sfx}
                         playAgain={newGame}
-                        mainMenu={mainMenu}
+                        mainMenu={() => {
+                            if (timeout.pauseMenuMusic.current)
+                                clearTimeout(timeout.pauseMenuMusic.current);
+                            mainMenu();
+                        }}
                         windowSize={windowSize}
                     />
                 ) : (
