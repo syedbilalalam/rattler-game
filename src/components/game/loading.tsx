@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import { DevBuildTag } from '@/components/game/dev';
 import '@/assets/loading.css'
 
 interface LoadingScreenComponentProps {
@@ -8,7 +9,7 @@ interface LoadingScreenComponentProps {
 export function LoadingScreen({ progress }: LoadingScreenComponentProps): JSX.Element {
     return (
         <>
-            <p className={'devWatermark'}>[Dev Build] BilalCode<sup>TM</sup></p>
+            <DevBuildTag />
             <div className='welcomeScreenBoard'>
 
                 <div className={'loadingBar'}>
@@ -25,5 +26,5 @@ export function LoadingScreen({ progress }: LoadingScreenComponentProps): JSX.El
                 </div>
             </div>
         </>
-    )
+    );
 }
