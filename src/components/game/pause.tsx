@@ -4,7 +4,7 @@ import '@/assets/root.css';
 import '@/assets/settings.css';
 import '@/assets/pause_menu.css';
 import { GameButton } from '@/components/game_button';
-import { SfxManager, WindowSize } from '@/app/game/page';
+import { SfxManager, WindowSize } from '@/app/page';
 import { SMALL_MENU_MAX_WIDTH } from '@/components/game/home';
 
 interface PauseMenuComponentProps {

@@ -3,7 +3,7 @@ import '@/assets/home.css';
 import '@/assets/button.css';
 import Typed from 'typed.js';
 import { GameButton } from '@/components/game_button';
-import { SfxManager, WindowSize } from '@/app/game/page';
+import { SfxManager, WindowSize } from '@/app/page';
 
 interface HomeScreenComponentProps {
     startGame: () => void;

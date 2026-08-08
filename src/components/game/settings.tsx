@@ -11,7 +11,7 @@ import {
     SfxManager,
     VolumeObject,
     WindowSize
-} from '@/app/game/page';
+} from '@/app/page';
 
 type OnOffButtonText = 'On' | 'Off';
 

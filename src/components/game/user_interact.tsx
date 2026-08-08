@@ -1,6 +1,6 @@
 import { useEffect, useRef, type JSX } from 'react';
 import { DevBuildTag } from '@/components/game/dev';
-import { CompleteInteraction } from '@/app/game/page';
+import { CompleteInteraction } from '@/app/page';
 
 // Css files
 import '@/assets/loading.css'

@@ -14,7 +14,7 @@ import {
     SfxManager,
     VolumeObject,
     WindowSize
-} from '@/app/game/page';
+} from '@/app/page';
 import {
     RattlerSnake,
     Position,

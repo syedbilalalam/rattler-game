@@ -1,5 +1,5 @@
 import type { JSX, ReactNode } from 'react';
-import { SfxManager } from '@/app/game/page';
+import { SfxManager } from '@/app/page';
 
 interface GameButtonComponentProps {
     sfx: SfxManager;
