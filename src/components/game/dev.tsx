@@ -5,7 +5,7 @@ export function DevBuildTag(): JSX.Element {
     return (
         <a
             className={'devWatermark'}
-            href={'mailto:syedbilalalam.dev@gmail.com'}
+            href={'mailto:talk@bilalcode.com'}
             target={'_blank'}
         >[Dev Build] BilalCode<sup>TM</sup></a>
     );
